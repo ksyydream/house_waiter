@@ -573,18 +573,21 @@ class Manager_model extends MY_Model
         if ($data['brand_id']) {
             $this->db->where('a.brand_id', $data['brand_id']);
         }
+        $this->db->where('a.is_delete <>', 1);
         $num = $this->db->get()->row();
         $data['total_rows'] = $num->num;
 
         //获取详细列
-        $this->db->select('a.*,b.brand_name,b.status b_status_')->from('brand_stores a');
+        $this->db->select('a.*,b.brand_name,b.status b_status_, ad.admin_name ad_admin_name')->from('brand_stores a');
         $this->db->join('brand b','a.brand_id = b.id', 'left');
+        $this->db->join('admin ad', 'ad.admin_id = a.invite', 'left');
         if ($data['keyword']) {
             $this->db->like('a.store_name', $data['keyword']);
         }
         if ($data['brand_id']) {
             $this->db->where('a.brand_id', $data['brand_id']);
         }
+        $this->db->where('a.is_delete <>', 1);
         $this->db->limit($this->limit, $offset = ($page - 1) * $this->limit);
         $this->db->order_by('a.create_time','desc');
         $data['res_list'] = $this->db->get()->result_array();
@@ -602,17 +605,19 @@ class Manager_model extends MY_Model
     public function store_save(){
         $data =array(
             'brand_id'=>trim($this->input->post('brand_id')),
+            'username'=>trim($this->input->post('username')),
             'store_name'=>trim($this->input->post('store_name')),
             'create_time' => time(),
             'status' => trim($this->input->post('status')) ? trim($this->input->post('status')) : -1
         );
-
+        $data['password'] = sha1('666666');
         if(!$data['store_name'])
             return $this->fun_fail('二级名称不能为空！');
         $id = $this->input->post('id');
         if($id){
             unset($data['create_time']);
             unset($data['brand_id']);
+            unset($data['password']);
             $this->db->where('store_id', $id)->update('brand_stores', $data);
         }else{
             if(!$data['brand_id'])
@@ -620,6 +625,14 @@ class Manager_model extends MY_Model
             $this->db->insert('brand_stores', $data);
         }
         return $this->fun_success('保存成功!');
+    }
+
+    public function refresh_store_password($admin_id){
+        $id = $this->input->post('id');
+        if(!$id)
+            return $this->fun_fail('信息缺失!');
+        $this->db->where(array('store_id' => $id))->update('brand_stores', array('password' => sha1('666666')));
+        return $this->fun_success('重置成功!');
     }
 
     /**
