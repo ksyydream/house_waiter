@@ -657,6 +657,19 @@ class Manager_model extends MY_Model
         return $this->fun_success('重置成功!');
     }
 
+    public function store_delete($admin_id){
+        $id = $this->input->post('id');
+        if(!$id)
+            return $this->fun_fail('信息缺失!');
+        //先确保该门店下没有 个人账号
+        $check_ = $this->db->select("*")->from('users')->where(array(
+            'store_id' => $id
+        ))->get()->row_array();
+        if($check_)
+            return $this->fun_fail('该门店下存在会员账户，不可直接删除！');
+        $this->db->where(array('store_id' => $id))->update('brand_stores', array('is_delete' => 1));
+        return $this->fun_success('重置成功!');
+    }
     /**
      * 会员列表
      * @author yangyang <yang.yang@thmarket.cn>

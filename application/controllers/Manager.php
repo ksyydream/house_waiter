@@ -457,7 +457,10 @@ class Manager extends MY_Controller {
         $this->ajaxReturn($res);
     }
 
-
+    public function store_delete(){
+        $res = $this->manager_model->store_delete($this->admin_id);
+        $this->ajaxReturn($res);
+    }
 
     /**
      * 会员列表
