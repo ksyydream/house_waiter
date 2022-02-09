@@ -61,6 +61,28 @@
                             </div>
                             <div class="space-4"></div>
                             <div class="form-group">
+                                <label class="col-sm-2 control-label no-padding-right" for="shopowner"> 店长名称 </label>
+                                <div class="col-sm-9">
+                                    <input type="text" id="shopowner" name="shopowner" class="rcol-xs-10 col-sm-5" value="{{$data.shopowner|default:''}}">
+                                    <span class="help-inline col-xs-12 col-sm-7"></span>
+                                </div>
+                            </div>
+                            <div class="space-4"></div>
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label no-padding-right" for="invite"> 所属服务专员 </label>
+                                <div class="col-sm-9">
+
+                                    <select name="invite" id="invite" style="width: 50%">
+                                        <option value="">-请选择-</option>
+                                        {{foreach from=$invite_list key=k item=v}}
+                                        <option {{if $data.invite == $v.admin_id}} selected{{/if}} value="{{$v.admin_id}}" >{{$v.admin_name}}-{{$v.user}}</option>
+                                        {{/foreach}}
+                                    </select>
+                                    <span class="help-inline col-xs-12 col-sm-7"></span>
+                                </div>
+                            </div>
+                            <div class="space-4"></div>
+                            <div class="form-group">
                                 <label class="col-sm-2 control-label no-padding-right" for="status"> 是否启用 </label>
                                 <div class="control-label no-padding-left col-sm-1">
                                     <label>
@@ -112,12 +134,20 @@
 
     $("#save_btn").click(function(){
         var store_name = $.trim($("#store_name").val());
+        var username = $.trim($("#username").val());
+        var invite = $.trim($("#invite").val());
         if(store_name == "" ) {
             layer.msg('门店二级名称 不能为空', {icon: 2});
             return false;
         }
-
-        
+        if(username == "" ) {
+            layer.msg('店长账号 不能为空', {icon: 2});
+            return false;
+        }
+        if(invite == "" ) {
+            layer.msg('所属管理员 不能为空', {icon: 2});
+            return false;
+        }
         $("#save_form").submit();
     })
 

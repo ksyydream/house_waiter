@@ -427,6 +427,8 @@ class Manager extends MY_Controller {
     public function store_add(){
         $brand_list = $this->manager_model->get_brand4select();
         $this->assign('brand_list', $brand_list);
+        $invite_list = $this->c4m_model->get_admin_list4user();
+        $this->assign('invite_list', $invite_list);
         $this->display('manager/business/store_add.html');
     }
 
@@ -435,6 +437,8 @@ class Manager extends MY_Controller {
         if(!$data){
             $this->show_message('未找到信息!');
         }
+        $invite_list = $this->c4m_model->get_admin_list4user();
+        $this->assign('invite_list', $invite_list);
         $this->assign('data', $data);
         $this->display('manager/business/store_detail.html');
     }
