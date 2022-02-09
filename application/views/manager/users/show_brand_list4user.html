@@ -1,0 +1,45 @@
+<table style="width: 99%">
+	
+	<tr>
+        <td style="width: 150px">品牌：</td>
+        <td>
+            <select name="sel_brand_id" id="sel_brand_id" style="width: 90%">
+                <option value="">-请选择-</option>
+                {{foreach from=$brand_list key=k item=v}}
+                <option value="{{$v.id}}">{{$v.brand_name}}</option>
+                {{/foreach}}
+            </select>
+        </td>
+
+    </tr>
+    <tr style="margin-top: 10px">
+        <td style="width: 150px">门店：</td>
+        <td>
+            <select name="sel_store_id" id="sel_store_id" style="width: 90%">
+                <option value="">-请选择-</option>
+            </select>
+        </td>
+
+    </tr>
+
+</table>
+
+<script type="text/javascript">
+    $("#sel_brand_id").change(function(){
+        var sel_brand_id = $(this).val();
+
+        $.post('/manager_login/get_storesByBrand4user', {sel_brand_id:sel_brand_id}, function(data) {
+            var data = JSON.parse(data);
+            var store_list = data;
+
+            var html = '<option value="">--请选择--</option>';
+            for(var i=0 ;i< store_list.length; i++){
+                html += "<option value='" + store_list[i]['store_id'] + "'>" + store_list[i]['store_name'] + "</option>"
+            }
+            $("#sel_store_id").html(html);
+
+
+        });
+    });
+</script>
+

@@ -100,21 +100,6 @@ class Ajax_api extends CI_Controller {
         die;
     }
 
-    /**
-     * 司机审核认证所使用的短信验证
-     * @author yangyang <yang.yang@thmarket.cn>
-     * @date 2018-5-31
-     */
-    public function get_driver_apply_code($phone){
-        $this->load->model('driver_model');
-        $check = $this->driver_model->get_applyByPhone(trim($phone));
-        if($check){
-            echo -2;
-        }else{
-            $this->get_phone_code(trim($phone));
-        }
-        die;
-    }
 
     /**
      * 修改信息所使用的短信验证

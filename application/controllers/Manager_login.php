@@ -179,6 +179,19 @@ class Manager_login extends MY_Controller {
         $this->display('manager/users/show_admin_list4user.html');
     }
 
+    public function get_brand_list4user(){
+        $data = $this->manager_model->get_brand4select();
+        $this->assign('brand_list', $data);
+        $this->display('manager/users/show_brand_list4user.html');
+    }
+
+    public function get_storesByBrand4user(){
+        $this->load->model('common4manager_model', 'cm_model');
+        $brand_id = trim($this->input->post('sel_brand_id'));
+        $res = $this->cm_model->get_storesByBrand4user($brand_id);
+        $this->ajaxReturn($res);
+    }
+
     public function get_status_list4loan() {
 
         $this->display('manager/loan/show_status_list4loan.html');

@@ -53,6 +53,16 @@ class Common4manager_model extends MY_Model
         return $data;
     }
 
+    public function get_storesByBrand4user($brand_id =0,$status= 0){
+        $this->db->select();
+        $this->db->from("brand_stores");
+        $this->db->where('is_delete', -1);
+        $this->db->where('brand_id', $brand_id);
+        if($status)
+            $this->db->where('status', $status);
+        $data = $this->db->get()->result_array();
+        return $data;
+    }
     /** check fun */
 
 

@@ -492,6 +492,11 @@ class Manager extends MY_Controller {
         $this->display('manager/users/form.html');
     }
 
+    public function brand_change4user(){
+        $res = $this->manager_model->brand_change4user($this->admin_id);
+        $this->ajaxReturn($res);
+    }
+
     /**
      * 保存会员
      * @author yangyang <yang.yang@thmarket.cn>

@@ -487,6 +487,7 @@ class Manager_model extends MY_Model
      public function get_brand4select($status= 0){
       $this->db->select();
       $this->db->from("brand");
+      $this->db->where('is_delete', -1);
       if($status)
         $this->db->where('status', $status);
         $data = $this->db->get()->result_array();
@@ -710,9 +711,10 @@ class Manager_model extends MY_Model
         $total_rows = $rs_total->num;
         $data['total_rows'] = $total_rows;
         //list
-        $this->db->select('us.*,b.brand_name,r1.name r1_name,r2.name r2_name,r3.name r3_name,r4.name r4_name, ad.admin_name ad_admin_name');
+        $this->db->select('us.*,b.brand_name,r1.name r1_name,r2.name r2_name,r3.name r3_name,r4.name r4_name, ad.admin_name ad_admin_name,s.store_name');
         $this->db->from('users us');
         $this->db->join('brand b','us.brand_id = b.id','left');
+        $this->db->join('brand_stores s','s.store_id = us.store_id','left');
         $this->db->join('region r1', 'us.province = r1.id', 'left');
         $this->db->join('region r2', 'us.city = r2.id', 'left');
         $this->db->join('region r3', 'us.district = r3.id', 'left');
@@ -820,6 +822,16 @@ class Manager_model extends MY_Model
         }
         $this->db->where(array('user_id' => $user_id))->update('users', array('invite' => $invite));
         return $this->fun_success('操作成功!');
+    }
+
+    public function brand_change4user(){
+        $user_id = $this->input->post("user_id");
+        $sel_brand_id = $this->input->post("sel_brand_id") ? $this->input->post("sel_brand_id") : null;
+        $sel_store_id = $this->input->post("sel_store_id") ? $this->input->post("sel_store_id") : null;
+        if(!$user_id)
+            return $this->fun_fail('信息缺失!');
+        //检查品牌和门店是否可使用
+
     }
 
       /**
