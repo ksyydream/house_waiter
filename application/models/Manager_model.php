@@ -831,7 +831,14 @@ class Manager_model extends MY_Model
         if(!$user_id)
             return $this->fun_fail('信息缺失!');
         //检查品牌和门店是否可使用
-
+        $check_brand_ = $this->db->select()->from('brand')->where(array('id' => $sel_brand_id, 'is_delete' => -1, 'status' => 1))->get()->row_array();
+        if(!$check_brand_)
+            return $this->fun_fail('品牌不可用!');
+        $check_store_ = $this->db->select()->from('brand_stores')->where(array('brand_id' => $sel_brand_id,'store_id' => $sel_store_id, 'is_delete' => -1, 'status' => 1))->get()->row_array();
+        if(!$check_store_)
+            return $this->fun_fail('门店不可用!');
+        $this->db->where(array('user_id' => $user_id))->update('users', array('invite' => $check_store_['invite'], 'brand_id' => $sel_brand_id, 'store_id' => $sel_store_id));
+        return $this->fun_success('操作成功!');
     }
 
       /**
