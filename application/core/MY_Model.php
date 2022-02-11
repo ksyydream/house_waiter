@@ -476,6 +476,16 @@ class MY_Model extends CI_Model{
         return $username;
     }
 
+    //获取随机 门店登陆账号
+    public function get_store_username(){
+        $title_ = 'KSMD' . date('ym', time());
+        $username = $title_ . sprintf('%03s', $this->get_sys_num_auto($title_));
+        $check = $this->db->select('store_id')->from('brand_stores')->where('username',$username)->order_by('store_id','desc')->get()->row_array();
+        if($check)
+            $username = $this->get_store_username();
+        return $username;
+    }
+
     //获取随机登陆账号
     public function get_workno(){
         $title_ = 'SL' . date('Ymd', time());

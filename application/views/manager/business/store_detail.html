@@ -41,6 +41,14 @@
                             </div>
                             <div class="space-4"></div>
                             <div class="form-group">
+                                <label class="col-sm-2 control-label no-padding-right" for="username"> 登录账号 </label>
+                                <div class="col-sm-3 yy_m_7">
+                                    {{$data.username|default:''}}
+
+                                </div>
+                            </div>
+                            <div class="space-4"></div>
+                            <div class="form-group">
                                 <label class="col-sm-2 control-label no-padding-right" for="store_name"> 门店名称 </label>
                                 <div class="col-sm-9">
                                     <input type="text" id="store_name" name="store_name" class="rcol-xs-10 col-sm-5" value="{{$data.store_name|default:''}}">
@@ -49,9 +57,9 @@
                             </div>
                             <div class="space-4"></div>
                             <div class="form-group">
-                                <label class="col-sm-2 control-label no-padding-right" for="store_name"> 店长账号 </label>
+                                <label class="col-sm-2 control-label no-padding-right" for="store_name"> 验证手机 </label>
                                 <div class="col-sm-9">
-                                    <input type="text" id="username" name="username" class="rcol-xs-10 col-sm-5" value="{{$data.username|default:''}}">
+                                    <input type="text" id="phone" name="phone" class="rcol-xs-10 col-sm-5" value="{{$data.phone|default:''}}">
                                     <span class="help-inline col-xs-12 col-sm-7"></span>
                                 </div>
                             </div>
@@ -65,7 +73,7 @@
                             </div>
                             <div class="space-4"></div>
                             <div class="form-group">
-                                <label class="col-sm-2 control-label no-padding-right" for="invite"> 所属服务专员 </label>
+                                <label class="col-sm-2 control-label no-padding-right" for="invite"> 所属服务管家 </label>
                                 <div class="col-sm-9">
 
                                     <select name="invite" id="invite" style="width: 50%">
@@ -133,15 +141,15 @@
             layer.msg('门店二级名称 不能为空', {icon: 2});
             return false;
         }
-        var username = $.trim($("#username").val());
+        var phone = $.trim($("#phone").val());
         var invite = $.trim($("#invite").val());
 
-        if(username == "" ) {
-            layer.msg('店长账号 不能为空', {icon: 2});
+        if(phone == "" ) {
+            layer.msg('验证手机 不能为空', {icon: 2});
             return false;
         }
         if(invite == "" ) {
-            layer.msg('所属管理员 不能为空', {icon: 2});
+            layer.msg('所属服务管家 不能为空', {icon: 2});
             return false;
         }
 

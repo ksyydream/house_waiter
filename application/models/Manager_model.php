@@ -606,7 +606,7 @@ class Manager_model extends MY_Model
     public function store_save(){
         $data =array(
             'brand_id'=>trim($this->input->post('brand_id')),
-            'username'=>trim($this->input->post('username')),
+            'phone'=>trim($this->input->post('phone')),
             'store_name'=>trim($this->input->post('store_name')),
             'shopowner'=>trim($this->input->post('shopowner')),
             'invite'=>trim($this->input->post('invite')),
@@ -617,8 +617,8 @@ class Manager_model extends MY_Model
         $data['password'] = sha1('666666');
         if(!$data['store_name'])
             return $this->fun_fail('门店名称不能为空！');
-        if(!$data['username'])
-            return $this->fun_fail('店长账户不能为空！');
+        if(!$data['phone'])
+            return $this->fun_fail('验证手机不能为空！');
         if(!$data['invite'])
             return $this->fun_fail('所属管理员不能为空！');
         $id = $this->input->post('id');
@@ -628,21 +628,22 @@ class Manager_model extends MY_Model
             unset($data['password']);
             //检查所设置 店长账户是否已经存在
             $check_ = $this->db->select("*")->from('brand_stores')->where(array(
-                'username' => $data['username'],
+                'phone' => $data['phone'],
                 'is_delete <>' => 1,
                 'store_id <>' => $id
             ))->get()->row_array();
             if($check_)
-                return $this->fun_fail('所设置的账户已被其他门店使用！');
+                return $this->fun_fail('所设置的验证手机已被其他门店使用！');
             $this->db->where('store_id', $id)->update('brand_stores', $data);
         }else{
+            $data['username'] = $this->get_store_username();
             //检查所设置 店长账户是否已经存在
             $check_ = $this->db->select("*")->from('brand_stores')->where(array(
-                'username' => $data['username'],
+                'phone' => $data['phone'],
                 'is_delete <>' => 1
             ))->get()->row_array();
             if($check_)
-                return $this->fun_fail('所设置的账户已被其他门店使用！');
+                return $this->fun_fail('所设置的验证手机已被其他门店使用！');
             if(!$data['brand_id'])
                 return $this->fun_fail('大客户不能为空！');
             $this->db->insert('brand_stores', $data);
@@ -816,7 +817,7 @@ class Manager_model extends MY_Model
         if(!$user_id)
             return $this->fun_fail('信息缺失!');
         if($invite){
-            $check_invite_ = $this->db->select()->from('admin')->where(array('admin_id' => $invite, 'status' => 1))->get()->row_array();
+            $check_invite_ = $this->db->select()->from('admin')->where(array('admin_id' => $invite, 'status' => 1, 'role_id' => 1))->get()->row_array();
             if(!$check_invite_)
                 return $this->fun_fail('推广专员不可使用!');
         }

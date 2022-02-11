@@ -28,9 +28,23 @@ class Common4manager_model extends MY_Model
         return $res;
     }
 
-    public function get_mx_list4loan() {
-        $data = $this->db->select()->from('admin')->where(array('status' => 1, 'role_id' => 1))->get()->result_array();
+    public function get_admin_work_list($role_id){
+        $data = $this->db->select()->from('admin')->where(array('status' => 1, 'role_id' => $role_id))->get()->result_array();
         return $data;
+    }
+
+    //服务管家
+    public function get_fw_list() {
+        return $this->get_admin_work_list(1);
+    }
+
+    //网签经理
+    public function get_wq_list() {
+        return $this->get_admin_work_list(2);
+    }
+
+    public function get_mx_list4loan(){
+
     }
 
     public function get_fk_list4loan() {

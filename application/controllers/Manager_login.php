@@ -170,11 +170,11 @@ class Manager_login extends MY_Controller {
     }
 
     /**
-     * 获取可用权证(交易中心)经理列表
+     * 服务管家列表
      */
     public function get_admin_list4user() {
         $this->load->model('common4manager_model', 'cm_model');
-        $data = $this->cm_model->get_admin_list4user();
+        $data = $this->cm_model->get_fw_list();
         $this->assign('data', $data);
         $this->display('manager/users/show_admin_list4user.html');
     }
