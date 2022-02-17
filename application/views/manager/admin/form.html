@@ -157,16 +157,17 @@
 
                             <div class="form-group">
 
-                                <label class="col-sm-1 control-label no-padding-right" for="form-field-6"> 手机端权限 </label>
+                                <label class="col-sm-1 control-label no-padding-right" for="form-field-6"> 移动端权限 </label>
 
                                 <div class="col-sm-9">
-
-                                    <select name="role_id">
-                                        <option value="-1">--请选择--</option>
-                                        {{foreach from=$work_role_list key=k1 item=v1}}
-                                        <option {{if $data.role_id == $v1.id}}selected{{/if}} value="{{$v1.id}}">{{$v1.name}}</option>
-                                        {{/foreach}}
-                                    </select>
+                                    {{foreach from=$work_role_list key=k1 item=v1}}
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" class="ace" name="work_role_ids[]" value="{{$v1.id}}" {{if $v1.id|in_array:$r_list}}checked="checked"{{/if}} />
+                                            <span class="lbl">{{$v1.name}}</span>
+                                        </label>
+                                    </div>
+                                    {{/foreach}}
 
                                 </div>
 
@@ -205,7 +206,7 @@
 {{include file='manager/public/footerjs.html'}}
 <!-- inline scripts related to this page -->
 <script src="/manager_statics/qwadmin/js/date-time/bootstrap-datepicker.js"></script>
-<script src="/manager_statics/app/ajaxfileupload.js"></script>
+<script src="/manager_statics/app/ajaxfileupload.js?v2"></script>
 <script type="text/javascript">
 
     window.onload = function() {

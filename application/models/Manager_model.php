@@ -235,6 +235,12 @@ class Manager_model extends MY_Model
             $this->db->order_by('a.t', 'asc');
         }
         $data['res_list'] = $this->db->get()->result_array();
+        foreach ($data['res_list'] as &$v){
+            $r_name_ = $this->db->select('group_concat(distinct wr.name ORDER BY r_id) r_name_list')->from('admin_work_role awr')
+                ->join('work_role wr','awr.r_id = wr.id','inner')
+                ->where(array('awr.admin_id' => $v['admin_id']))->get()->row_array();
+            $v['r_name_'] = $r_name_['r_name_list'];
+        }
         return $data;
     }
 
@@ -310,15 +316,15 @@ class Manager_model extends MY_Model
         $this->db->where('admin_id', $admin_id)->delete('auth_group_access');
         $this->db->insert('auth_group_access', array('admin_id' => $admin_id, 'group_id' => $group_id));
 
-        //$work_role_ids = $this->input->post('work_role_ids');
-        //$this->db->where('admin_id', $admin_id)->delete('admin_work_role');
-        //if ($work_role_ids) {
-            //if (is_array($work_role_ids)) {
-                //foreach ($work_role_ids as $item) {
-                    //$this->db->insert('admin_work_role', array('admin_id' => $admin_id, 'r_id' => $item));
-                //}
-            //}
-        //}
+        $work_role_ids = $this->input->post('work_role_ids');
+        $this->db->where('admin_id', $admin_id)->delete('admin_work_role');
+        if ($work_role_ids) {
+            if (is_array($work_role_ids)) {
+                foreach ($work_role_ids as $item) {
+                    $this->db->insert('admin_work_role', array('admin_id' => $admin_id, 'r_id' => $item));
+                }
+            }
+        }
         return $this->fun_success('保存成功');
     }
 

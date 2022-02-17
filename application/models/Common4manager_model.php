@@ -29,7 +29,19 @@ class Common4manager_model extends MY_Model
     }
 
     public function get_admin_work_list($role_id){
-        $data = $this->db->select()->from('admin')->where(array('status' => 1, 'role_id' => $role_id))->get()->result_array();
+        if(is_array($role_id)){
+            $data = $this->db->select('a.*')->from('admin a')
+                ->join('admin_work_role awr','a.admin_id = awr.admin_id','inner')
+                ->where('a.status', 1)
+                ->where_in('awr.r_id', $role_id)
+                ->group_by('a.admin')
+                ->get()->result_array();
+        }else{
+            $data = $this->db->select('a.*')->from('admin a')
+                ->join('admin_work_role awr','a.admin_id = awr.admin_id','inner')
+                ->where(array('a.status' => 1, 'awr.r_id' => $role_id))->get()->result_array();
+        }
+
         return $data;
     }
 

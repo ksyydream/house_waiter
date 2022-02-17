@@ -504,7 +504,7 @@
 			// var iframe = document.createElement('iframe');
 			// iframe.setAttribute('name', id);
 
-			var iframe = toElement('<iframe src="javascript:false;" name="' + id + '" />');
+			var iframe = toElement('<iframe src="about:blank" name="' + id + '" />');
 			// src="javascript:false; was added
 			// because it possibly removes ie6 prompt
 			// "This page contains both secure and nonsecure items"
