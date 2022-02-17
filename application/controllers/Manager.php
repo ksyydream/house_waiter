@@ -699,5 +699,46 @@ class Manager extends MY_Controller {
         $this->display('manager/log_list/sms_list.html');
     }
 
+    /**
+     *********************************************************************************************
+     * 以下代码为银行相关模块
+     *********************************************************************************************
+     */
 
+    /**
+     * 银行列表
+     * @author yangyang <yang.yang@thmarket.cn>
+     * @date 2022-02-17
+     */
+    public function bank_list($page = 1){
+        $data = $this->manager_model->bank_list($page, 1);
+        $base_url = "/manager/bank_list/";
+        $pager = $this->pagination->getPageLink4manager($base_url, $data['total_rows'], $data['limit']);
+        $this->assign('pager', $pager);
+        $this->assign('page', $page);
+        $this->assign('data', $data);
+        $this->display('manager/bank/bank_list.html');
+    }
+
+    public function bank_add(){
+        $this->display('manager/bank/bank_add.html');
+    }
+
+    public function bank_edit($id){
+        $data = $this->manager_model->bank_edit($id);
+        if(!$data){
+            $this->show_message('未找到信息!');
+        }
+        $this->assign('data', $data);
+        $this->display('manager/bank/bank_edit.html');
+    }
+
+    public function bank_save(){
+        $res = $this->manager_model->bank_save();
+        if($res['status'] == 1){
+            $this->show_message($res['msg'], site_url('/manager/bank_list'));
+        }else{
+            $this->show_message($res['msg']);
+        }
+    }
 }

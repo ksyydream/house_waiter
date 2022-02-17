@@ -1143,6 +1143,66 @@ class Manager_model extends MY_Model
         return $data;
     }
 
+    /**
+     *********************************************************************************************
+     * 以下代码为银行相关模块
+     *********************************************************************************************
+     */
+
+    public function bank_list($page = 1){
+        $data['limit'] = $this->limit;
+        $data['name'] = trim($this->input->get('name')) ? trim($this->input->get('name')) : null;
+        $where_ = array('id >' => 0);
+        if ($data['name']) {
+            $where_['name like'] = '%' . $data['name'] . '%';
+        }
+        //获取总记录数
+        $this->db->select('count(1) num')->from('bank a');
+        $this->db->where($where_);
+        $num = $this->db->get()->row();
+        $data['total_rows'] = $num->num;
+
+        //获取详细列
+        $this->db->select('a.*')->from('bank a');
+        $this->db->where($where_);
+        $this->db->limit($this->limit, $offset = ($page - 1) * $this->limit);
+        $this->db->order_by('a.id','desc');
+        $data['res_list'] = $this->db->get()->result_array();
+        return $data;
+    }
+
+    public function bank_edit($id){
+        $detail =  $this->readByID('bank', 'id', $id);
+        return $detail;
+    }
+
+    public function bank_save(){
+        $data =array(
+            'name'=>trim($this->input->post('name')),
+            'path'=>trim($this->input->post('path')),
+            'phone'=>trim($this->input->post('phone')),
+            'label'=>trim($this->input->post('label')),
+            'remark'=>trim($this->input->post('remark')),
+            'create_time' => time(),
+            'status' => trim($this->input->post('status')) ? trim($this->input->post('status')) : -1
+        );
+
+        $id = $this->input->post('id');
+        if($id){
+            unset($data['name']);
+            unset($data['create_time']);
+            $this->db->where('id', $id)->update('bank', $data);
+        }else{
+            if(!$data['name'])
+                return $this->fun_fail('银行名称不能为空！');
+            $check_ = $this->db->select('*')->from('bank')->where(array('name' => $data['name'], 'id <>' => $id))->get()->row_array();
+            if($check_)
+                return $this->fun_fail('此银行名称已存在,不可新增！');
+            $this->db->insert('bank', $data);
+        }
+        return $this->fun_success('保存成功!');
+    }
+
 
 
 }
