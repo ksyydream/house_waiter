@@ -205,9 +205,9 @@ class Warrants_model extends MY_Model
 
 
     //赎楼业务列表 私有 共用方法
-    private function warrants_list($where, $order_1 = 'a.create_time', $order_2 = 'desc', $page_ = 1){
+    private function warrants_list($where, $order_1 = 'a.create_time', $order_2 = 'desc', $page_ = 1, $limit_ = -1){
         $res = array();
-        $data['limit'] = $this->mini_limit;//每页显示多少调数据
+        $data['limit'] = $limit_ < 0 ?$this->mini_limit : $limit_;//每页显示多少调数据
         $data['keyword'] = $this->input->post('keyword')?trim($this->input->post('keyword')):null;
         $data['brand_id'] = $this->input->post('brand_id')?trim($this->input->post('brand_id')):null;
         $data['store_id'] = $this->input->post('store_id')?trim($this->input->post('store_id')):null;
@@ -222,7 +222,8 @@ class Warrants_model extends MY_Model
         $this->db->join('warrants_buyers wb', 'a.warrants_id = wb.warrants_id', 'left');
         $this->db->join('warrants_sellers ws', 'a.warrants_id = ws.warrants_id', 'left');
         $this->db->join('users u','a.user_id = u.user_id','left');
-        $this->db->where($where);
+        if ($where && $where != array())
+            $this->db->where($where);
         if($data['keyword']){
             $this->db->group_start();
             $this->db->like('wb.buyer_name', $data['keyword']);
@@ -273,7 +274,8 @@ class Warrants_model extends MY_Model
         $this->db->join('admin yh', 'a.yh_admin_id = yh.admin_id', 'left');
         $this->db->join('admin wq', 'a.wq_admin_id = wq.admin_id', 'left');
         $this->db->join('admin gh', 'a.gh_admin_id = gh.admin_id', 'left');
-        $this->db->where($where);
+        if ($where && $where != array())
+            $this->db->where($where);
         if($data['keyword']){
             $this->db->group_start();
             $this->db->like('wb.buyer_name', $data['keyword']);
@@ -305,6 +307,7 @@ class Warrants_model extends MY_Model
         $this->db->group_by('a.warrants_id');
         $this->db->limit($data['limit'], $offset = ($page - 1) * $data['limit']);
         $res['res_list'] = $this->db->get()->result_array();
+        //return $this->db->last_query();
         foreach($res['res_list'] as $k => $v){
             $b_list_ = $this->db->select('group_concat(distinct wb.buyer_name ORDER BY wb.id) b_name_list')->from('warrants_buyers wb')
                 ->where(array('wb.warrants_id' => $v['warrants_id']))->get()->row_array();
@@ -401,7 +404,19 @@ class Warrants_model extends MY_Model
             );
             $this->db->insert('loan_log', $insert_);
         }
+    }
 
+    //管理员审核流程判断
+    /*
+     * param $warrants_id 代表需要审核的单号
+     * param $status_type 代表需要审核的工作流 直接使用栏位名称标注，例如 status_wq 就是网签工作流
+     * param $status_value 代表审核所指向的节点
+     * param $admin_id 代表审核人
+     * */
+    private function audit_warrants($warrants_id, $status_type, $status_value, $admin_id, $remark = ''){
+        //DBY_problem 需要维护好 审核的流程规划
+        // 先网签审核，在网签通过后 即status_wq = 2时，才可以进入银行托管流程，status_yh_tg才可以是1
+        // 当need_mortgage为一时，才存在按揭流程，也就意味着 托管流程 status_yh_tg才可以是1 才会存在2的节点
     }
 
     /**
@@ -411,7 +426,7 @@ class Warrants_model extends MY_Model
      */
 
     public function warrants_list4manager($page = 1, $where = array()){
-        $data = $this->warrants_list($where, 'a.create_time', 'desc', $page);
+        $data = $this->warrants_list($where, 'a.create_time', 'desc', $page, $this->limit);
         return $data;
     }
 

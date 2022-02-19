@@ -755,7 +755,7 @@ class Manager extends MY_Controller {
      */
     public function warrants_list($page = 1){
         $this->load->model('warrants_model');
-        $data = $this->warrants_model->warrants_list4manager($page, 1);
+        $data = $this->warrants_model->warrants_list4manager($page);
         $base_url = "/manager/warrants_list/";
         $pager = $this->pagination->getPageLink4manager($base_url, $data['total_rows'], $data['data']['limit']);
         $this->assign('pager', $pager);
