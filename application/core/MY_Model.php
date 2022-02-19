@@ -496,6 +496,16 @@ class MY_Model extends CI_Model{
         return $work_no;
     }
 
+    //获取权证账号
+    public function get_order_num(){
+        $title_ = 'QZ' . date('Ymd', time());
+        $order_num = $title_ . sprintf('%04s', $this->get_sys_num_auto($title_));
+        $check = $this->db->select('warrants_id')->from('warrants')->where('order_num',$order_num)->order_by('warrants_id','desc')->get()->row_array();
+        if($check)
+            $order_num = $this->get_workno();
+        return $order_num;
+    }
+
     //获取面签经理id
     public function get_role_admin_id($role_id){
         $admin_id = -1;
@@ -505,19 +515,23 @@ class MY_Model extends CI_Model{
             return $admin_id;
         $last_use_admin_id = $role_info_['used_admin_id'];
         $new_admin_info = $this->db->select()->where(array(
-            'admin_id >' => $last_use_admin_id,
-            'status' => 1,
-            'role_id' => $role_id
-        ))->from('admin')->order_by('admin_id','asc')->get()->row_array();
+            'a.admin_id >' => $last_use_admin_id,
+            'a.status' => 1,
+            'awr.r_id' => $role_id
+        ))->from('admin a')
+            ->join('admin_work_role awr','a.admin_id = awr.admin_id','inner')
+            ->order_by('a.admin_id','asc')->get()->row_array();
         if($new_admin_info){
             $this->db->where('id', $role_id)->update('work_role',array('used_admin_id' => $new_admin_info['admin_id']));
             return $new_admin_info['admin_id'];
         }else{
             //如果没有找到,就使用最早的一位
             $new_admin_info = $this->db->select()->where(array(
-                'status' => 1,
-                'role_id' => $role_id
-            ))->from('admin')->order_by('admin_id','asc')->get()->row_array();
+                'a.status' => 1,
+                'awr.r_id' => $role_id
+            ))->from('admin a')
+                ->join('admin_work_role awr','a.admin_id = awr.admin_id','inner')
+                ->order_by('a.admin_id','asc')->get()->row_array();
             if($new_admin_info){
                 $this->db->where('id', $role_id)->update('work_role',array('used_admin_id' => $new_admin_info['admin_id']));
                 return $new_admin_info['admin_id'];
