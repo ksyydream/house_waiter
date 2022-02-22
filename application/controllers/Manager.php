@@ -766,7 +766,8 @@ class Manager extends MY_Controller {
     }
 
     public function warrants_edit($warrants_id){
-        $data = $this->manager_model->warrants_edit($warrants_id);
+        $this->load->model('warrants_model');
+        $data = $this->warrants_model->warrants_info($warrants_id);
         if($data["status"] != 1){
             $this->show_message('未找到信息!');
         }

@@ -115,13 +115,17 @@
                                                                          </div>
                                                                      </div>
                                                                      <div class="profile-info-row">
-                                                                         <div class="profile-info-name"> 工作流(银行托管) </div>
+                                                                         <div class="profile-info-name"> 工作流(银行) </div>
                                                                          <div class="profile-info-value">
                                                                              <span>
-                                                                                 {{if $data.status_yh_tg == 1}}<span class="label label-white arrowed arrowed-right">等待首付/全款托管</span>{{/if}}
-                                                                                 {{if $data.status_yh_tg == 2}}<span class="label label-grey arrowed arrowed-right">等待按揭托管</span>{{/if}}
-                                                                                 {{if $data.status_yh_tg == -1}}<span class="label label-danger arrowed arrowed-right">异常</span>{{/if}}
-                                                                                 {{if $data.status_yh_tg == 3}}<span class="label label-success arrowed arrowed-right">托管完成</span>{{/if}}
+                                                                                 {{if $data.status_yh == 1}}
+                                                                                 <span class="label label-white arrowed arrowed-right">等待首付托管</span>
+                                                                                 {{/if}}
+                                                                                 {{if $data.status_yh == 2}}<span class="label label-purple arrowed arrowed-right">等待按揭面签</span>{{/if}}
+                                                                                 {{if $data.status_yh == 3}}<span class="label label-grey arrowed arrowed-right">等待按揭托管</span>{{/if}}
+                                                                                  {{if $data.status_yh == 4}}<span class="label label-success arrowed arrowed-right">托管完成</span>{{/if}}
+                                                                                 {{if $data.status_yh == -1}}<span class="label label-danger arrowed arrowed-right">异常</span>{{/if}}
+
                                                                                  {{if $data.flag == 1}}
                                                                                  <a href="javascript:void(0);" id="status_tg_btn">修改</a>
                                                                                  {{/if}}
@@ -129,13 +133,18 @@
                                                                          </div>
                                                                      </div>
                                                                      <div class="profile-info-row">
-                                                                         <div class="profile-info-name"> 工作流(银行按揭) </div>
+                                                                         <div class="profile-info-name"> 工作流(过户) </div>
                                                                          <div class="profile-info-value">
                                                                              <span>
-                                                                                 {{if $data.status_yh_aj == 1}}<span class="label label-white arrowed arrowed-right">等待面签</span>{{/if}}
-                                                                                 {{if $data.status_yh_aj == 2}}<span class="label label-grey arrowed arrowed-right">等待按揭托管</span>{{/if}}
-                                                                                 {{if $data.status_yh_aj == -1}}<span class="label label-danger arrowed arrowed-right">异常</span>{{/if}}
-                                                                                 {{if $data.status_yh_aj == 3}}<span class="label label-success arrowed arrowed-right">托管完成</span>{{/if}}
+                                                                                 {{if $data.status_gh == 1}}<span class="label label-white arrowed arrowed-right">预约过户</span>{{/if}}
+                                                                                 {{if $data.status_gh == 2}}<span class="label label-grey arrowed arrowed-right">完成过户</span>{{/if}}
+                                                                                  {{if $data.need_mortgage == 1}}
+                                                                                 {{if $data.status_gh == 3}}<span class="label label-grey arrowed arrowed-right">已出证</span>{{/if}}
+                                                                                 {{if $data.status_gh == 4}}<span class="label label-success arrowed arrowed-right">已办押</span>{{/if}}
+                                                                                 {{else}}
+                                                                                  {{if $data.status_gh == 3}}<span class="label label-success arrowed arrowed-right">已出证</span>{{/if}}
+                                                                                  {{/if}}
+                                                                                  {{if $data.status_gh == -1}}<span class="label label-danger arrowed arrowed-right">异常</span>{{/if}}
                                                                                  {{if $data.flag == 1}}
                                                                                  <a href="javascript:void(0);" id="status_aj_btn">修改</a>
                                                                                  {{/if}}
@@ -143,11 +152,11 @@
                                                                          </div>
                                                                      </div>
                                                                      <div class="profile-info-row">
-                                                                         <div class="profile-info-name"> 提交时间 </div>
+                                                                         <div class="profile-info-name"> 生成时间 </div>
 
                                                                          <div class="profile-info-value">
 
-                                                                             <span>{{$data.loan_cdate|default:''}}</span>
+                                                                             <span>{{$data.warrants_cdate|default:''}}</span>
                                                                          </div>
                                                                      </div>
                                                                      <div class="profile-info-row">
@@ -156,6 +165,14 @@
                                                                          <div class="profile-info-value">
 
                                                                              <span>{{$data.brand_name|default:''}}</span>
+                                                                         </div>
+                                                                     </div>
+                                                                     <div class="profile-info-row">
+                                                                         <div class="profile-info-name"> 门店名称 </div>
+
+                                                                         <div class="profile-info-value">
+
+                                                                             <span>{{$data.store_name|default:''}}</span>
                                                                          </div>
                                                                      </div>
                                                                      <div class="profile-info-row">
@@ -193,57 +210,58 @@
                                                                      </div>
 
                                                                      <div class="profile-info-row">
-                                                                         <div class="profile-info-name"> 借款金额 </div>
+                                                                         <div class="profile-info-name"> 成交总价 </div>
 
                                                                          <div class="profile-info-value">
-                                                                             <span>{{$data.loan_money|default:''}}万</span>
-                                                                         </div>
-                                                                     </div>
-
-                                                                     <div class="profile-info-row">
-                                                                         <div class="profile-info-name" style="font-size:smaller"> 需还抵押贷款金额 </div>
-
-                                                                         <div class="profile-info-value">
-                                                                             <span>{{$data.still_pay_back|default:'-'}}万</span>
-                                                                         </div>
-                                                                     </div>
-
-                                                                     <div class="profile-info-row">
-                                                                         <div class="profile-info-name"> 抵押机构 </div>
-
-                                                                         <div class="profile-info-value">
-                                                                             <span>{{$data.mortgage_agency|default:''}}</span>
+                                                                             <span>{{$data.total_price|default:''}}元</span>
                                                                          </div>
                                                                      </div>
                                                                      <div class="profile-info-row">
-                                                                         <div class="profile-info-name"> 房屋成交总价 </div>
+                                                                         <div class="profile-info-name"> 首付、定金 </div>
 
                                                                          <div class="profile-info-value">
-                                                                             <span>{{$data.houses_price|default:'-'}}万</span>
+                                                                             <span>{{$data.deposit|default:''}}元</span>
                                                                          </div>
                                                                      </div>
-
                                                                      <div class="profile-info-row">
-                                                                         <div class="profile-info-name"> 买方贷款金额 </div>
+                                                                         <div class="profile-info-name"> 目标按揭银行 </div>
 
                                                                          <div class="profile-info-value">
-                                                                             <span>{{$data.buyer_loan|default:'-'}}万</span>
+                                                                             <span>{{$data.expect_mortgage_bank|default:''}}</span>
                                                                          </div>
                                                                      </div>
-
                                                                      <div class="profile-info-row">
-                                                                         <div class="profile-info-name"> 买方按揭机构 </div>
+                                                                         <div class="profile-info-name"> 预计按揭金额 </div>
 
                                                                          <div class="profile-info-value">
-                                                                             <span>{{$data.buyer_mortgage_bank|default:''}}</span>
+                                                                             <span>{{$data.expect_mortgage_money|default:''}}元</span>
                                                                          </div>
                                                                      </div>
-
                                                                      <div class="profile-info-row">
-                                                                         <div class="profile-info-name"> 预约面签时间 </div>
-
+                                                                         <div class="profile-info-name"> 按揭组合 </div>
                                                                          <div class="profile-info-value">
-                                                                             <span>{{$data.appointment_date|default:''}}</span>
+                                                                             <span>{{$data.mortgage_type|default:''}}</span>
+                                                                         </div>
+                                                                     </div>
+                                                                     <div class="profile-info-row">
+                                                                         <div class="profile-info-name"> 房屋坐落 </div>
+                                                                         <div class="profile-info-value">
+                                                                             <span>{{$data.house_location|default:''}}</span>
+                                                                         </div>
+                                                                     </div>
+                                                                     <div class="profile-info-row">
+                                                                         <div class="profile-info-name"> 产证年数 </div>
+                                                                         <div class="profile-info-value">
+                                                                             <span>{{$data.huose_years|default:''}}</span>
+                                                                         </div>
+                                                                     </div>
+                                                                     <div class="profile-info-row">
+                                                                         <div class="profile-info-name"> 房屋是否在押 </div>
+                                                                         <div class="profile-info-value">
+                                                                             <span>
+                                                                                 {{if $data.is_mortgage == 1}}是{{/if}}
+                                                                                  {{if $data.is_mortgage == -1}}否{{/if}}
+                                                                             </span>
                                                                          </div>
                                                                      </div>
 
@@ -255,34 +273,25 @@
                                                                      <div class="col-xs-11">
                                                                          <h4 class="blue">
                                                 <i class="green ace-icon fa fa-list bigger-110"></i>
-                                               借款人信息
-                                            </h4>        
-                                                                     
+                                               买方信息
+                                            </h4>
                                 </div>
                                                                      <div class="row">
                                                                          <table class="table table-striped table-bordered">
                                                                              <thead>
-
                                                                                  <tr>
-
                                                                                      <th style="width:15%;">姓名</th>
-                                                                                  
                                                                                      <th style="width:25%;">身份证号</th>
                                                                                      <th style="width:15%;">联系电话</th>
-                                                                                     <th style="width:10%;">同盾返回</th>
                                                                                  </tr>
-
                                                                              </thead>
-
                                                                              <tbody>
-                                                                                 {{if !empty($data.borrowers_list) }}
-                                                                                 {{foreach from=$data.borrowers_list item=item}}
+                                                                                 {{if !empty($data.buyers_list) }}
+                                                                                 {{foreach from=$data.buyers_list item=item}}
                                                                                  <tr>
-                                                                                     <td>{{$item.borrower_name}}</td>
-                                                                                     <td>{{$item.borrower_card}}</td>
-                                                                                     <td>{{$item.borrower_phone}}</td>
-                                                                                     <td>{{$item.td_decision}}</td>
-                                                                                     
+                                                                                     <td>{{$item.buyer_name}}</td>
+                                                                                     <td>{{$item.buyer_card}}</td>
+                                                                                     <td>{{$item.buyer_phone}}</td>
                                                                                  </tr>
                                                                                  {{/foreach}}
                                                                                  {{/if}}
@@ -290,7 +299,36 @@
                                                                          </table>
                                                                      </div>
 
+                                                                <div class="space-4"></div>
 
+                                                                <div class="col-xs-11">
+                                                                    <h4 class="blue">
+                                                                        <i class="green ace-icon fa fa-list bigger-110"></i>
+                                                                        卖方信息
+                                                                    </h4>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <table class="table table-striped table-bordered">
+                                                                        <thead>
+                                                                        <tr>
+                                                                            <th style="width:15%;">姓名</th>
+                                                                            <th style="width:25%;">身份证号</th>
+                                                                            <th style="width:15%;">联系电话</th>
+                                                                        </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                        {{if !empty($data.sellers_list) }}
+                                                                        {{foreach from=$data.sellers_list item=item}}
+                                                                        <tr>
+                                                                            <td>{{$item.seller_name}}</td>
+                                                                            <td>{{$item.seller_card}}</td>
+                                                                            <td>{{$item.seller_phone}}</td>
+                                                                        </tr>
+                                                                        {{/foreach}}
+                                                                        {{/if}}
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
                                                             </div>
                                                         </div><!-- /.col -->
 
@@ -311,241 +349,40 @@
                                                     <div class="space-4"></div>
                                                     <div class="profile-user-info profile-user-info-striped">
                                                         <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 面签经理 </div>
+                                                            <div class="profile-info-name"> 服务管家 </div>
 
                                                             <div class="profile-info-value">
-                                                                <span> {{$data.mx_name|default:''}}</span>
+                                                                <span> {{$data.fw_name|default:''}}</span>
                                                             </div>
                                                         </div>
                                                         <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 面签审核时间 </div>
+                                                            <div class="profile-info-name"> 提交时间 </div>
 
                                                             <div class="profile-info-value">
-                                                                <span> {{$data.mx_date_|default:''}}</span>
+                                                                <span> {{$data.submit_cdate_|default:''}}</span>
                                                             </div>
                                                         </div>
                                                         <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 面签意见 </div>
+                                                            <div class="profile-info-name"> 网签经理 </div>
 
                                                             <div class="profile-info-value">
-                                                                <span>
-                                                                    <textarea rows="4" style="width:900px">{{$data.mx_remark|default:''}}</textarea>
-                                                                </span>
+                                                                <span> {{$data.wq_name|default:''}}</span>
+                                                            </div>
+                                                        </div>
+
+
+                                                        <div class="profile-info-row">
+                                                            <div class="profile-info-name"> 银行经理 </div>
+
+                                                            <div class="profile-info-value">
+                                                                <span> {{$data.yh_name|default:''}}</span>
                                                             </div>
                                                         </div>
                                                         <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 合同 </div>
+                                                            <div class="profile-info-name"> 过户经理 </div>
 
                                                             <div class="profile-info-value">
-                                                                <span> {{$data.ht_name|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 居间服务费 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.jj_price|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 风控经理 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.fk_name|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 风控审核时间 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.fk_date_|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 风控意见 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span>
-                                                                    <textarea rows="3" style="width:900px">{{$data.fk_remark|default:''}}</textarea>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 终审经理 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.zs_name|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 终审审核时间 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.zs_date_|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 终审意见 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span>
-                                                                    <textarea rows="4" style="width:900px">{{$data.zs_remark|default:''}}</textarea>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 权证(银行) </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.qz_name|default:''}}</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 网签通过时间 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.wq_date_|default:''}}</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 托管通过时间 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.tg_date_|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 借款银行机构 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.make_loan_bank|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 借款银行卡 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.make_loan_card|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 回款银行机构 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.returned_money_bank|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 回款银行卡 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.returned_money_card|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 按揭放款时间 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.nj_date_|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 赎楼借款时间 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.make_loan_date_|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 赎楼预约时间 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.redeem_date|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 权证(交易中心) </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.fc_name|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 过户完成时间 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.gh_date_|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 回款完成时间 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.returned_money_date_|default:''}}</span>
-                                                            </div>
-                                                        </div>
-
-
-                                                    </div>
-
-                                                    {{if !empty($data.loan_supervise) }}
-                                                    <div class="widget-box widget-color-dark">
-
-
-                                                        <div class="widget-body">
-                                                            <div class="widget-main">
-                                                                <ul class="list-unstyled spaced2">
-                                                                    {{foreach from=$data.loan_supervise key=k item=v}}
-                                                                    <li>
-                                                                        <i class="ace-icon fa {{if $v.is_check == 1}}fa-check green{{else}}fa-times red{{/if}}"></i>
-                                                                        {{$v.name}}  {{if $v.type == 2}}【补充信息】{{$v.option_value}}{{/if}}
-                                                                    </li>
-
-                                                                    {{/foreach}}
-                                                                    <li>
-                                                                        备注:{{$data.supervise_remark|default:''}}
-                                                                    </li>
-                                                                </ul>
-                                                            </div>
-                                                        </div>
-
-                                                    </div>{{/if}}
-                                                </div>
-                                            </div>
-                                            <h4 class="blue">
-                                                <i class="red ace-icon fa fa-archive bigger-110"></i>
-                                                委外信息
-                                            </h4>
-                                            <div class="row">
-                                                <div class="col-sm-11">
-
-
-                                                    <div class="space-4"></div>
-                                                    <div class="profile-user-info profile-user-info-striped">
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 委外设置人 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.ww_name|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 委外审核时间 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span> {{$data.ww_date_|default:''}}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 委外意见 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span>
-                                                                    <textarea rows="4" style="width:900px">{{$data.ww_remark|default:''}}</textarea>
-                                                                </span>
+                                                                <span> {{$data.gh_name|default:''}}</span>
                                                             </div>
                                                         </div>
 
@@ -567,27 +404,16 @@
                                                             <div class="profile-info-name"> 设置人 </div>
 
                                                             <div class="profile-info-value">
-                                                                <span> {{$data.err_name|default:''}}</span>
+                                                                <span> </span>
                                                             </div>
                                                         </div>
                                                         <div class="profile-info-row">
                                                             <div class="profile-info-name"> 拒单异常时间 </div>
 
                                                             <div class="profile-info-value">
-                                                                <span> {{$data.err_date_|default:''}}</span>
+                                                                <span></span>
                                                             </div>
                                                         </div>
-                                                        <div class="profile-info-row">
-                                                            <div class="profile-info-name"> 委外意见 </div>
-
-                                                            <div class="profile-info-value">
-                                                                <span>
-                                                                    <textarea rows="4" style="width:900px">{{$data.err_remark|default:''}}</textarea>
-                                                                </span>
-                                                            </div>
-                                                        </div>
-
-
                                                     </div>
                                                 </div>
                                             </div>
