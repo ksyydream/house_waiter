@@ -19,7 +19,7 @@ class Warrants_model extends MY_Model
     }
 
 
-    //新建赎楼业务
+    //新建权证业务
     public function save_warrants($user_id){
 
         $buyers = $this->input->post("buyers");;
@@ -205,7 +205,7 @@ class Warrants_model extends MY_Model
 
 
 
-    //赎楼业务列表 私有 共用方法
+    //权证业务列表 私有 共用方法
     private function warrants_list($where, $order_1 = 'a.create_time', $order_2 = 'desc', $page_ = 1, $limit_ = -1){
         $res = array();
         $data['limit'] = $limit_ < 0 ?$this->mini_limit : $limit_;//每页显示多少调数据
@@ -324,7 +324,7 @@ class Warrants_model extends MY_Model
         return $res;
     }
 
-    //赎楼业务详情
+    //权证业务详情
     public function warrants_info($warrants_id, $select_ = "*"){
         $select = "a.*,FROM_UNIXTIME(a.create_time) warrants_cdate,
         FROM_UNIXTIME(a.submit_time) submit_cdate_,
