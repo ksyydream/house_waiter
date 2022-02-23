@@ -502,7 +502,7 @@ class MY_Model extends CI_Model{
         $order_num = $title_ . sprintf('%04s', $this->get_sys_num_auto($title_));
         $check = $this->db->select('warrants_id')->from('warrants')->where('order_num',$order_num)->order_by('warrants_id','desc')->get()->row_array();
         if($check)
-            $order_num = $this->get_workno();
+            $order_num = $this->get_order_num();
         return $order_num;
     }
 

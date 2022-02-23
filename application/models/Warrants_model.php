@@ -86,12 +86,13 @@ class Warrants_model extends MY_Model
             'status_yh_aj' => 0,
             'status_gh' => 0
 		);
-        if($user_info['store_id'])
-            $data['store_id'] = $user_info['store_id'];
+
         //先验证关键数据是否有效
         if(!$data['total_price'] || $data['total_price'] <= 0){
             return $this->fun_fail('总价不能为空!');
         }
+        $fw_admin_id = $this->get_role_admin_id(1);
+        $data['fw_admin_id'] = $fw_admin_id;
         $data['order_num'] = $this->get_order_num();
         $this->db->insert('warrants', $data);
         $warrants_id = $this->db->insert_id();
