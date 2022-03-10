@@ -19,39 +19,22 @@ class Warrants_model extends MY_Model
     }
 
 
-    //新建权证业务
+    //新建权证业务 客户端专用
     public function save_warrants($user_id){
 
         $buyers = $this->input->post("buyers");;
         if(!is_array($buyers)){
             $buyers = json_decode($buyers,true);
         }
-        if(!$buyers)
-            return $this->fun_fail('买方不能为空!');
-
-        foreach($buyers as $k_ => $v_){
-            if(!isset($v_['buyer_name']) || trim($v_['buyer_name']) == "")
-                return $this->fun_fail('存在买方姓名为空!');
-            if(!isset($v_['buyer_phone']) || trim($v_['buyer_phone']) == "")
-                return $this->fun_fail('存在买方电话为空!');
-            if(!isset($v_['buyer_card']) || trim($v_['buyer_card']) == "")
-                return $this->fun_fail('存在买方身份证为空!');
-        }
 
         $sellers = $this->input->post("sellers");;
         if(!is_array($sellers)){
             $sellers = json_decode($sellers,true);
         }
-        if(!$sellers)
-            return $this->fun_fail('卖方不能为空!');
-        foreach($sellers as $k_ => $v_){
-            if(!isset($v_['seller_name']) || trim($v_['seller_name']) == "")
-                return $this->fun_fail('存在卖方姓名为空!');
-            if(!isset($v_['seller_phone']) || trim($v_['seller_phone']) == "")
-                return $this->fun_fail('存在卖方电话为空!');
-            if(!isset($v_['seller_card']) || trim($v_['seller_card']) == "")
-                return $this->fun_fail('存在卖方身份证为空!');
-        }
+
+        $check_b_s_ = $this->check_b_s($buyers, $sellers);
+        if($check_b_s_['status'] == -1)
+            return $this->fun_fail($check_b_s_['msg']);
 
         //获取门店 大客户品牌
         //DBY_problem 可能会有临时单据，没有用户ID
@@ -91,54 +74,168 @@ class Warrants_model extends MY_Model
         if(!$data['total_price'] || $data['total_price'] <= 0){
             return $this->fun_fail('总价不能为空!');
         }
-        $fw_admin_id = $this->get_role_admin_id(1);
+        $fw_admin_id = $user_info['invite'];
         $data['fw_admin_id'] = $fw_admin_id;
         $data['order_num'] = $this->get_order_num();
         $this->db->insert('warrants', $data);
         $warrants_id = $this->db->insert_id();
         //批量新增买方
-        $buyers_insert_ = array();
-        foreach($buyers as $k => $v){
-            $b_insert_ = array(
-                'buyer_name' => $v['buyer_name'],
-                'buyer_phone' => $v['buyer_phone'],
-                'buyer_card' => $v['buyer_card'],
-                'warrants_id' => $warrants_id
-            );
-            $buyers_insert_[] = $b_insert_;
-        }
-        $this->db->insert_batch('warrants_buyers', $buyers_insert_);
-        //批量新增卖方
-        $sellers_insert_ = array();
-        foreach($sellers as $k => $v){
-            $s_insert_ = array(
-                'seller_name' => $v['seller_name'],
-                'seller_phone' => $v['seller_phone'],
-                'seller_card' => $v['seller_card'],
-                'warrants_id' => $warrants_id
-            );
-            $sellers_insert_[] = $s_insert_;
-        }
-        $this->db->insert_batch('warrants_sellers', $sellers_insert_);
+        $this->save_b_s($buyers, $sellers, $warrants_id);
         return $this->fun_success('操作成功',array('warrants_id' => $warrants_id));
 	}
 
-	//服务管家 完善内容
-    public function submit_warrants($warrants_id, $fw_admin_id){
-        $warrants_info_ = $this->db->select()->from('warrants')->where(array('warrants_id' => $warrants_id))->get()->row_array();
-        if (!$warrants_info_)
-            return $this->fun_fail('权证单不存在!');
-        if ($warrants_info_['flag'] != 1 || $warrants_info_['status_wq'] != 0 || $warrants_info_['status_yh_tg'] != 0 || $warrants_info_['status_yh_aj'] != 0 || $warrants_info_['status_gh'] != 0 )
-            return $this->fun_fail('权证单状态已变更 不可提交!');
-        if ($warrants_info_['fw_admin_id'] != $fw_admin_id)
-            return $this->fun_fail('您没有此权证操作权限!');
+	//服务管家专用 完善内容
+    public function submit_warrants($fw_admin_id, $is_submit = -1){
+        $warrants_id = $this->input->post('warrants_id');
+        if($warrants_id){
+            $warrants_info_ = $this->db->select()->from('warrants')->where(array('warrants_id' => $warrants_id))->get()->row_array();
+            if (!$warrants_info_)
+                return $this->fun_fail('权证单不存在!');
+            if ($warrants_info_['flag'] != 1 || $warrants_info_['status_wq'] != 0 || $warrants_info_['status_yh_tg'] != 0 || $warrants_info_['status_yh_aj'] != 0 || $warrants_info_['status_gh'] != 0 )
+                return $this->fun_fail('权证单状态已变更 不可提交!');
+            if ($warrants_info_['fw_admin_id'] != $fw_admin_id)
+                return $this->fun_fail('您没有此权证操作权限!');
+        }
 
         $buyers = $this->input->post("buyers");
-        $buyers_insert_ = array();
         if(!is_array($buyers)){
             $buyers = json_decode($buyers,true);
         }
-        if(!$buyers)
+        $sellers = $this->input->post("sellers");
+        if(!is_array($sellers)){
+            $sellers = json_decode($sellers,true);
+        }
+
+        $qualification_arr_ = $this->input->post('qualification');
+        $qualification_ = '';
+        if($qualification_arr_ && is_array($qualification_arr_))
+            $qualification_ =  implode(',', $qualification_arr_);
+        $data = array(
+            'create_time' => time(),
+            'modify_time' => time(),
+            'total_price' => trim($this->input->post('total_price')),                                                                               //成交总价
+            'qualification' => $qualification_,                      //购房资格
+            'housing_area' => trim($this->input->post('housing_area')) ? trim($this->input->post('housing_area')) : null,                           //房屋面积
+            'mortgage_bank_id' => trim($this->input->post('mortgage_bank_id')) ? trim($this->input->post('mortgage_bank_id')) : null,       //预计按揭银行ID
+            'expect_mortgage_money' => trim($this->input->post('expect_mortgage_money')) ? trim($this->input->post('expect_mortgage_money')) : null,    //预计按揭金额
+            'mortgage_money' => trim($this->input->post('expect_mortgage_money')) ? trim($this->input->post('expect_mortgage_money')) : null,    //预计按揭金额
+            'mortgage_type' => trim($this->input->post('mortgage_type')) ? trim($this->input->post('mortgage_type')) : null,                            //按揭组合
+            'house_location' => trim($this->input->post('house_location')) ? trim($this->input->post('house_location')) : '',                           //房屋坐落
+            'huose_years' => trim($this->input->post('huose_years')) ? trim($this->input->post('huose_years')) : null,                                  //产证年数
+            'is_mortgage' => trim($this->input->post('is_mortgage')) ? trim($this->input->post('is_mortgage')) : null,                                  //房屋是否抵押中
+            'need_mortgage' => trim($this->input->post('need_mortgage')) ? trim($this->input->post('need_mortgage')) : -1,                              //是否需要贷款，【重要】,
+            'house_num' => trim($this->input->post('house_num')) ? trim($this->input->post('house_num')) : null,                                  //第几套房子
+            'tax' => trim($this->input->post('tax')) ? trim($this->input->post('tax')) : null,                                  //契税点数
+            'is_local' => trim($this->input->post('is_local')) ? trim($this->input->post('is_local')) : null,
+            'remark' => trim($this->input->post('remark')) ? trim($this->input->post('remark')) : null,
+            'user_type' => trim($this->input->post('user_type')) ? trim($this->input->post('user_type')) : null,
+            'flag' => 1,
+            'status_wq' => 0,
+            'status_yh_tg' => 0,
+            'status_yh_aj' => 0,
+            'status_gh' => 0
+        );
+        $data['wq_admin_id'] = trim($this->input->post('wq_admin_id'));
+        $data['fw_admin_id'] = $fw_admin_id;
+
+        //一些栏位 必须验证
+        if (!$data['user_type'] || !in_array($data['user_type'], array(1,2)))
+            return $this->fun_fail('客户类型必须选择!');
+        switch ($data['user_type']){
+            case 1:
+                $data['user_id'] = trim($this->input->post('user_id'));
+                break;
+            case 2:
+                $data['user_phone'] = trim($this->input->post('user_phone'));
+                $data['temp_rel_name'] = trim($this->input->post('temp_rel_name'));
+                if (!$data['user_phone'])
+                    return $this->fun_fail('个人客户 需要填写手机号!');
+                if (!$data['temp_rel_name'])
+                    return $this->fun_fail('个人客户 需要填写姓名!');
+                break;
+        }
+        //如果确认提交 则需要进行所有的验证
+        if($is_submit == 1){
+            $data['status_wq'] = 1;
+            $data['submit_time'] = time();
+            switch ($data['user_type']){
+                case 1:
+                    $data['user_id'] = trim($this->input->post('user_id'));
+                    if (!$data['user_id'])
+                        return $this->fun_fail('门店客户必须指定经纪人!');
+                    $user_info_ = $this->db->select('*')->from('users')->where(array('user_id' => $data['user_id'], 'status' => 1))->get()->row_array();
+                    if(!$user_info_)
+                        return $this->fun_fail('所选经纪人不可用!');
+                    $data['create_user_id'] = $user_info_['user_id'];
+                    $data['user_phone'] = $user_info_['mobile'];
+                    $data['create_user_phone'] = $user_info_['mobile'];
+                    $data['temp_rel_name'] = $user_info_['rel_name'];
+                    $data['brand_id'] = $user_info_['brand_id'];
+                    $data['store_id'] = $user_info_['store_id'];
+                    break;
+                case 2:
+                    if (!$data['user_phone'])
+                        return $this->fun_fail('个人客户 需要填写手机号!');
+                    if (!$data['temp_rel_name'])
+                        return $this->fun_fail('个人客户 需要填写姓名!');
+                    break;
+            }
+            if (!$data['wq_admin_id'])
+                return $this->fun_fail('网签人员未设置!');
+            if (!$data['total_price'] || $data['total_price'] == 0)
+                return $this->fun_fail('成交总价必填!');
+            if (!$data['house_location'])
+                return $this->fun_fail('房屋坐落必填!');
+            if (!$data['housing_area'])
+                return $this->fun_fail('房屋面积必填!');
+            if (!$data['mortgage_type'])
+                return $this->fun_fail('按揭组合未设置!');
+            if (!$data['is_mortgage'] || !in_array($data['is_mortgage'], array(1,-1)))
+                return $this->fun_fail('是否在押必须选择!');
+            switch ($data['need_mortgage']){
+                case 1:
+                    if (!$data['mortgage_bank_id'])
+                        return $this->fun_fail('目标按揭银行必须选择!');
+                    if (!$data['mortgage_money'] || $data['mortgage_money'] <= 0)
+                        return $this->fun_fail('按揭金额必须填写!');
+                    $bank_info_ = $this->db->select('*')->from('bank')->where(array('id' => $data['mortgage_bank_id'], 'status' => 1))->get()->row_array();
+                    if(!$bank_info_)
+                        return $this->fun_fail('所选银行不可用!');
+                    $data['expect_mortgage_bank'] = $bank_info_['name'];
+                    $data['mortgage_bank'] = $bank_info_['name'];
+                    break;
+                case -1:
+                    break;
+                default:
+                    return $this->fun_fail('是否需要按揭标记 必须传递!');
+            }
+            if (!$data['qualification'])
+                return $this->fun_fail('购房资格必须选择!');
+            //if (!$data['huose_years'])
+                //return $this->fun_fail('产证年数必须填写!');
+            //if (!$data['house_num'])
+                //return $this->fun_fail('第几套房必须填写!');
+            //if (!$data['tax'])
+                //return $this->fun_fail('契税点数必须填写!');
+            $check_b_s_ = $this->check_b_s($buyers, $sellers);
+            if($check_b_s_['status'] == -1)
+                return $this->fun_fail($check_b_s_['msg']);
+        }
+        if ($warrants_id){
+            $this->db->where(array('warrants_id' => $warrants_id, 'fw_admin_id' => $fw_admin_id))->update('warrants', $data);
+        }else{
+            $data['order_num'] = $this->get_order_num();
+            $this->db->insert('warrants', $data);
+            $warrants_id = $this->db->insert_id();
+        }
+        $this->save_b_s($buyers, $sellers, $warrants_id);
+        return $this->fun_success('操作成功',array('warrants_id' => $warrants_id));
+
+    }
+
+    //验证 买卖双方信息数组
+    private function check_b_s($buyers = array(), $sellers = array()){
+        if(!$buyers || $buyers == array())
             return $this->fun_fail('买方不能为空!');
         foreach($buyers as $k_ => $v_){
             if(!isset($v_['buyer_name']) || trim($v_['buyer_name']) == "")
@@ -147,21 +244,10 @@ class Warrants_model extends MY_Model
                 return $this->fun_fail('存在买方电话为空!');
             if(!isset($v_['buyer_card']) || trim($v_['buyer_card']) == "")
                 return $this->fun_fail('存在买方身份证为空!');
-            $b_insert_ = array(
-                'buyer_name' => $v_['buyer_name'],
-                'buyer_phone' => $v_['buyer_phone'],
-                'buyer_card' => $v_['buyer_card'],
-                'warrants_id' => $warrants_id
-            );
-            $buyers_insert_[] = $b_insert_;
+            if(!isset($v_['buyer_marriage']) || trim($v_['buyer_marriage']) == "")
+                return $this->fun_fail('存在买方婚姻状况为空!');
         }
-
-        $sellers = $this->input->post("sellers");
-        $sellers_insert_ = array();
-        if(!is_array($sellers)){
-            $sellers = json_decode($sellers,true);
-        }
-        if(!$sellers)
+        if(!$sellers || $sellers == array())
             return $this->fun_fail('卖方不能为空!');
         foreach($sellers as $k_ => $v_){
             if(!isset($v_['seller_name']) || trim($v_['seller_name']) == "")
@@ -170,37 +256,46 @@ class Warrants_model extends MY_Model
                 return $this->fun_fail('存在卖方电话为空!');
             if(!isset($v_['seller_card']) || trim($v_['seller_card']) == "")
                 return $this->fun_fail('存在卖方身份证为空!');
-            $s_insert_ = array(
-                'seller_name' => $v_['seller_name'],
-                'seller_phone' => $v_['seller_phone'],
-                'seller_card' => $v_['seller_card'],
-                'warrants_id' => $warrants_id
-            );
-            $sellers_insert_[] = $s_insert_;
+            if(!isset($v_['seller_marriage']) || trim($v_['seller_marriage']) == "")
+                return $this->fun_fail('存在卖方婚姻状况为空!');
         }
+        return $this->fun_success('验证成功');
+    }
 
-        $data = array(
-            'modify_time' => time(),
-            'submit_time' => time(),
-            'total_price' => trim($this->input->post('total_price')),                                                                               //成交总价
-            'deposit' => trim($this->input->post('deposit')) ? trim($this->input->post('deposit')) : null,                                          //首付、定金
-            'expect_mortgage_bank' => trim($this->input->post('expect_mortgage_bank')) ? trim($this->input->post('expect_mortgage_bank')) : null,       //预计按揭银行
-            'expect_mortgage_money' => trim($this->input->post('expect_mortgage_money')) ? trim($this->input->post('expect_mortgage_money')) : null,    //预计按揭金额
-            'mortgage_type' => trim($this->input->post('mortgage_type')) ? trim($this->input->post('mortgage_type')) : null,                            //按揭组合
-            'house_location' => trim($this->input->post('house_location')) ? trim($this->input->post('house_location')) : '',                           //房屋坐落
-            'huose_years' => trim($this->input->post('huose_years')) ? trim($this->input->post('huose_years')) : null,                                  //产证年数
-            'is_mortgage' => trim($this->input->post('is_mortgage')) ? trim($this->input->post('is_mortgage')) : null,                                  //房屋是否抵押中
-            'need_mortgage' => trim($this->input->post('need_mortgage')) ? trim($this->input->post('need_mortgage')) : -1,                              //是否需要贷款，【重要】,
-            'status_wq' => 1,
-        );
-        $data['wq_admin_id'] = $this->get_role_admin_id(1);
-        $this->db->where(array('warrants_id' => $warrants_id, 'fw_admin_id' => $fw_admin_id))->update('warrants', $data);
+    //批量处理 买卖方
+    private function save_b_s($buyers = array(), $sellers = array(), $warrants_id)
+    {
         $this->db->where('warrants_id', $warrants_id)->delete('warrants_buyers');
         $this->db->where('warrants_id', $warrants_id)->delete('warrants_sellers');
-        $this->db->insert_batch('warrants_buyers', $buyers_insert_);
-        $this->db->insert_batch('warrants_sellers', $sellers_insert_);
-        return $this->fun_success('操作成功',array('warrants_id' => $warrants_id));
-
+        if ($buyers) {
+            $buyers_insert_ = array();
+            foreach ($buyers as $k => $v) {
+                $b_insert_ = array(
+                    'buyer_name' => isset($v['buyer_name']) ? $v['buyer_name'] : '',
+                    'buyer_phone' =>  isset($v['buyer_phone']) ? $v['buyer_phone'] : '',
+                    'buyer_card' =>  isset($v['buyer_card']) ? $v['buyer_card'] : '',
+                    'buyer_marriage' =>  isset($v['buyer_marriage']) ? $v['buyer_marriage'] : '',
+                    'warrants_id' => $warrants_id
+                );
+                $buyers_insert_[] = $b_insert_;
+            }
+            $this->db->insert_batch('warrants_buyers', $buyers_insert_);
+        }
+        if ($sellers) {
+            $sellers_insert_ = array();
+            foreach ($sellers as $k => $v) {
+                $s_insert_ = array(
+                    'seller_name' => $v['seller_name'],
+                    'seller_phone' => $v['seller_phone'],
+                    'seller_card' => $v['seller_card'],
+                    'seller_marriage' => $v['seller_marriage'],
+                    'warrants_id' => $warrants_id
+                );
+                $sellers_insert_[] = $s_insert_;
+            }
+            $this->db->insert_batch('warrants_sellers', $sellers_insert_);
+        }
+        return $this->fun_success('操作成功');
     }
 
 
