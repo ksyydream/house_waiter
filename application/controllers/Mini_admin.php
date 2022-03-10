@@ -12,7 +12,7 @@ require_once "Mini_controller.php";
 class Mini_admin extends Mini_controller {
     private $admin_id;
     private $role_id;
-    private $admin_info = [];
+    private $admin_info = array();
     public function __construct()
     {
         parent::__construct();

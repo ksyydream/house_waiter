@@ -26,9 +26,14 @@ class Mini_login extends Mini_controller {
         if($rs['status'] == 1){
             $admin_id = $rs['result']['admin_id'];
             $role_id = $rs['result']['role_id'];
+            $admin_info_ = $this->mini_admin_model->get_admin_info($admin_id);
+            $role_name = '';
+            if ($admin_info_ && $admin_info_['status'] == 1 && $admin_info_['result']){
+                $role_name = $admin_info_['result']['role_name'];
+            }
             $token = $this->set_token_uid($admin_id,'ADMIN');
             $this->mini_admin_model->update_admin_tt($admin_id,$token);
-            $rs['result'] = array('token' => $token, 'role_id' => $role_id);
+            $rs['result'] = array('token' => $token, 'role_id' => $role_id, 'role_name' => $role_name);
         }
         $this->ajaxReturn($rs);
     }

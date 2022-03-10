@@ -69,7 +69,7 @@ class Mini_controller extends MY_Controller
     public function get_header_token(){
         if (function_exists('getallheaders')){
             foreach (getallheaders() as $name => $value) {
-                if($name == 'Token'){
+                if($name == 'Token' || $name == 'token'){
                     return $value;
                 }
             }
@@ -77,7 +77,7 @@ class Mini_controller extends MY_Controller
         }else{
             $hears_ = $this->getallheaders4nginx();
             foreach ($hears_ as $name => $value) {
-                if($name == 'Token'){
+                if($name == 'Token' || $name == 'token'){
                     return $value;
                 }
             }
