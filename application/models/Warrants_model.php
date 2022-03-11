@@ -117,8 +117,8 @@ class Warrants_model extends MY_Model
             'qualification' => $qualification_,                      //购房资格
             'housing_area' => trim($this->input->post('housing_area')) ? trim($this->input->post('housing_area')) : null,                           //房屋面积
             'mortgage_bank_id' => trim($this->input->post('mortgage_bank_id')) ? trim($this->input->post('mortgage_bank_id')) : null,       //预计按揭银行ID
-            'expect_mortgage_money' => trim($this->input->post('expect_mortgage_money')) ? trim($this->input->post('expect_mortgage_money')) : null,    //预计按揭金额
-            'mortgage_money' => trim($this->input->post('expect_mortgage_money')) ? trim($this->input->post('expect_mortgage_money')) : null,    //预计按揭金额
+            'expect_mortgage_money' => trim($this->input->post('mortgage_money')) ? trim($this->input->post('mortgage_money')) : null,    //预计按揭金额
+            'mortgage_money' => trim($this->input->post('mortgage_money')) ? trim($this->input->post('mortgage_money')) : null,    //预计按揭金额
             'mortgage_type' => trim($this->input->post('mortgage_type')) ? trim($this->input->post('mortgage_type')) : null,                            //按揭组合
             'house_location' => trim($this->input->post('house_location')) ? trim($this->input->post('house_location')) : '',                           //房屋坐落
             'huose_years' => trim($this->input->post('huose_years')) ? trim($this->input->post('huose_years')) : null,                                  //产证年数
@@ -148,11 +148,26 @@ class Warrants_model extends MY_Model
             case 2:
                 $data['user_phone'] = trim($this->input->post('user_phone'));
                 $data['temp_rel_name'] = trim($this->input->post('temp_rel_name'));
-                if (!$data['user_phone'])
-                    return $this->fun_fail('个人客户 需要填写手机号!');
-                if (!$data['temp_rel_name'])
-                    return $this->fun_fail('个人客户 需要填写姓名!');
                 break;
+        }
+        switch ($data['need_mortgage']){
+            case 1:
+                if ($data['mortgage_bank_id']){
+                    $bank_info_ = $this->db->select('*')->from('bank')->where(array('id' => $data['mortgage_bank_id'], 'status' => 1))->get()->row_array();
+                    if($bank_info_){
+                        $data['expect_mortgage_bank'] = $bank_info_['name'];
+                        $data['mortgage_bank'] = $bank_info_['name'];
+                    }
+                }
+                break;
+            case -1:
+                $data['expect_mortgage_money'] = '';
+                $data['mortgage_money'] = '';
+                $data['expect_mortgage_bank'] = '';
+                $data['mortgage_bank'] = '';
+                break;
+            default:
+                return $this->fun_fail('是否需要按揭标记 必须传递!');
         }
         //如果确认提交 则需要进行所有的验证
         if($is_submit == 1){
@@ -201,8 +216,6 @@ class Warrants_model extends MY_Model
                     $bank_info_ = $this->db->select('*')->from('bank')->where(array('id' => $data['mortgage_bank_id'], 'status' => 1))->get()->row_array();
                     if(!$bank_info_)
                         return $this->fun_fail('所选银行不可用!');
-                    $data['expect_mortgage_bank'] = $bank_info_['name'];
-                    $data['mortgage_bank'] = $bank_info_['name'];
                     break;
                 case -1:
                     break;
@@ -355,9 +368,11 @@ class Warrants_model extends MY_Model
         FROM_UNIXTIME(a.create_time) create_date_,
        a.status_wq,a.status_yh,a.status_gh,a.need_mortgage,
         fw.admin_name fw_name,fw.phone fw_phone,
-        yh.admin_name yh_name,yh.phone yh_phone,
+        yh_tg.admin_name yh_tg_name,yh_tg.phone yh_tg_phone,
+        yh_aj.admin_name yh_aj_name,yh_aj.phone yh_aj_phone,
         wq.admin_name wq_name,wq.phone wq_phone,
         gh.admin_name gh_name,gh.phone gh_phone,
+         gh_yy.admin_name gh_yy_name,gh_yy.phone gh_yy_phone,
          bd.brand_name,s.store_id,s.store_name");
         $this->db->from('warrants a');
         $this->db->join('warrants_buyers wb', 'a.warrants_id = wb.warrants_id', 'left');
@@ -367,8 +382,10 @@ class Warrants_model extends MY_Model
         $this->db->join('brand bd','a.brand_id = bd.id','left');
         $this->db->join('brand_stores s','a.store_id = s.store_id','left');
         $this->db->join('admin fw', 'a.fw_admin_id = fw.admin_id', 'left');
-        $this->db->join('admin yh', 'a.yh_admin_id = yh.admin_id', 'left');
+        $this->db->join('admin yh_tg', 'a.yh_tg_admin_id = yh_tg.admin_id', 'left');
+        $this->db->join('admin yh_aj', 'a.yh_aj_admin_id = yh_aj.admin_id', 'left');
         $this->db->join('admin wq', 'a.wq_admin_id = wq.admin_id', 'left');
+        $this->db->join('admin gh_yy', 'a.gh_yy_admin_id = gh_yy.admin_id', 'left');
         $this->db->join('admin gh', 'a.gh_admin_id = gh.admin_id', 'left');
         if ($where && $where != array())
             $this->db->where($where);
@@ -425,10 +442,12 @@ class Warrants_model extends MY_Model
         FROM_UNIXTIME(a.submit_time) submit_cdate_,
        u.rel_name handle_name,u.mobile handle_mobile,
         u1.rel_name create_name,u1.mobile create_mobile,
-          fw.admin_name fw_name,fw.phone fw_phone,
-        yh.admin_name yh_name,yh.phone yh_phone,
+         fw.admin_name fw_name,fw.phone fw_phone,
+        yh_tg.admin_name yh_tg_name,yh_tg.phone yh_tg_phone,
+        yh_aj.admin_name yh_aj_name,yh_aj.phone yh_aj_phone,
         wq.admin_name wq_name,wq.phone wq_phone,
         gh.admin_name gh_name,gh.phone gh_phone,
+         gh_yy.admin_name gh_yy_name,gh_yy.phone gh_yy_phone,
          bd.brand_name,s.store_id,s.store_name";
         $this->db->select($select);
         $this->db->from('warrants a');
@@ -437,8 +456,10 @@ class Warrants_model extends MY_Model
         $this->db->join('brand bd','a.brand_id = bd.id','left');
         $this->db->join('brand_stores s','a.store_id = s.store_id','left');
         $this->db->join('admin fw', 'a.fw_admin_id = fw.admin_id', 'left');
-        $this->db->join('admin yh', 'a.yh_admin_id = yh.admin_id', 'left');
+        $this->db->join('admin yh_tg', 'a.yh_tg_admin_id = yh_tg.admin_id', 'left');
+        $this->db->join('admin yh_aj', 'a.yh_aj_admin_id = yh_aj.admin_id', 'left');
         $this->db->join('admin wq', 'a.wq_admin_id = wq.admin_id', 'left');
+        $this->db->join('admin gh_yy', 'a.gh_yy_admin_id = gh_yy.admin_id', 'left');
         $this->db->join('admin gh', 'a.gh_admin_id = gh.admin_id', 'left');
         $warrants_info = $this->db->where('a.warrants_id', $warrants_id)->get()->row_array();
         if(!$warrants_info)

@@ -29,6 +29,21 @@ class Common4manager_model extends MY_Model
     }
 
     public function get_admin_work_list($role_id){
+        $this->db->select('a.admin_id, a.user, a.role_id, w.name role_name, a.admin_name')->from('admin a');
+        $this->db->join('work_role w','a.role_id = w.id','left');
+        $this->db->where('a.status', 1);
+        if($role_id > 0){
+            $this->db->where('a.role_id', $role_id);
+        }else{
+            $this->db->where('a.role_id >', 0);
+            $this->db->where('a.role_id <>', 2);
+        }
+        $data = $this->db->get()->result_array();
+        return $data;
+    }
+
+    //【暂时不用】 先保留
+    public function get_admin_work_list_old($role_id){
         if(is_array($role_id)){
             $data = $this->db->select('a.*')->from('admin a')
                 ->join('admin_work_role awr','a.admin_id = awr.admin_id','inner')
@@ -41,7 +56,6 @@ class Common4manager_model extends MY_Model
                 ->join('admin_work_role awr','a.admin_id = awr.admin_id','inner')
                 ->where(array('a.status' => 1, 'awr.r_id' => $role_id))->get()->result_array();
         }
-
         return $data;
     }
 
@@ -52,7 +66,7 @@ class Common4manager_model extends MY_Model
 
     //网签经理
     public function get_wq_list() {
-        return $this->get_admin_work_list(2);
+        return $this->get_admin_work_list(3);
     }
 
     public function get_mx_list4loan(){

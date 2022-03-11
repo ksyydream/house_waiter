@@ -114,6 +114,11 @@ class Mini_login extends Mini_controller {
         $this->ajaxReturn($rs);
     }
 
+    public function get_bank_list(){
+        $rs = $this->mini_login_model->get_bank_list();
+        $this->ajaxReturn($rs);
+    }
+
     //账号退出 三种账号均可以使用
     public function logout(){
         $token = $this->get_header_token();

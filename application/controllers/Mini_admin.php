@@ -19,6 +19,7 @@ class Mini_admin extends Mini_controller {
         $this->load->model('mini_admin_model');
         $this->load->model('loan_model');
         $this->load->model('warrants_model');
+        $this->load->model('common4manager_model', 'c4m_model');
         $token = $this->get_header_token();
         if(!$token){
             $this->ajaxReturn(array('status' => -100, 'msg' => 'token缺失!', "result" => ''));
@@ -47,6 +48,13 @@ class Mini_admin extends Mini_controller {
         $admin_info = $this->mini_admin_model->get_admin_info($this->admin_id);
         $this->ajaxReturn($admin_info);
     }
+
+    //获取所有可分配管理员
+    public function get_admin_fp_list(){
+        $admin_info = $this->mini_admin_model->get_admin_fp_list($this->admin_id);
+        $this->ajaxReturn($admin_info);
+    }
+
 
     //赎楼列表
     public function loan_list(){
@@ -121,6 +129,12 @@ class Mini_admin extends Mini_controller {
      * 以下代码为服务管家专用，即提单 和 人员指派
      *********************************************************************************************
      */
+
+    public function get_wq_admin_list(){
+        $data = $this->c4m_model->get_wq_list();
+        $res_ = $this->mini_admin_model->fun_success('操作成功', $data);
+        $this->ajaxReturn($res_);
+    }
 
     public function save_warrants(){
         $res = $this->warrants_model->submit_warrants($this->admin_id, -1);

@@ -272,12 +272,28 @@ class Mini_login_model extends MY_Model
             return $this->fun_fail('参数错误');
         $brand_info_ = $this->db->select()->from('brand')->where(array('id' => $brand_id, 'status' => 1))->get()->row_array();
         if(!$brand_info_)
-            return $this->fun_fail('大客户不可用');
+            return $this->fun_fail('品牌不可用');
         $this->db->select("store_name,store_id");
         $this->db->from('brand_stores');
         if($status = $this->input->post('status'))
             $this->db->where(array('status' => $status));
         $re = $this->db->get()->result_array();
+        return $this->fun_success('获取成功', $re);
+    }
+
+    //获取银行列表
+    public function get_bank_list(){
+        $this->db->select("name,id,label");
+        $this->db->from('bank');
+        if($status = $this->input->post('status'))
+            $this->db->where(array('status' => $status));
+        $re = $this->db->get()->result_array();
+        foreach ($re as &$v){
+            $v['label_arr'] = array();
+            if($v['label']){
+                $v['label_arr'] = explode('|', $v['label']);
+            }
+        }
         return $this->fun_success('获取成功', $re);
     }
 
