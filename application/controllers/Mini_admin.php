@@ -35,12 +35,12 @@ class Mini_admin extends Mini_controller {
         $this->mini_admin_model->save_admin_log($this->admin_id); //保存操作记录
         //这里做 服务管家 和 财务人员的 权限控制
         if ($this->role_id != 1 && in_array($this->uri->segment(2),array('save_warrants','submit_warrants'))){
-            $err_ = $this->mini_admin_model->fun_fail('你没有操作权限');
-            $this->ajaxReturn($err_);
+            //$err_ = $this->mini_admin_model->fun_fail('你没有操作权限');
+            //$this->ajaxReturn($err_);
         }
         if ($this->role_id != 2 && in_array($this->uri->segment(2),array('',''))){
-            $err_ = $this->mini_admin_model->fun_fail('你没有操作权限');
-            $this->ajaxReturn($err_);
+            //$err_ = $this->mini_admin_model->fun_fail('你没有操作权限');
+            //$this->ajaxReturn($err_);
         }
     }
 
@@ -51,12 +51,25 @@ class Mini_admin extends Mini_controller {
 
     //获取所有可分配管理员
     public function get_admin_fp_list(){
-        $admin_info = $this->mini_admin_model->get_admin_fp_list($this->admin_id);
-        $this->ajaxReturn($admin_info);
+        $data = $this->c4m_model->get_admin_fp_list();
+        $res_ = $this->mini_admin_model->fun_success('操作成功', $data);
+        $this->ajaxReturn($res_);
     }
 
+    //根据brand_id 获取用户列表
+    public function get_users_by_brand_id(){
+        $this->load->model('mini_user_model');
+        $res_ = $this->mini_user_model->get_users_by_brand_id();
+        $this->ajaxReturn($res_);
+    }
 
-    //赎楼列表
+    //获取需要处理 权证单各个状态的数量
+    public function warrants_count(){
+        $res_ = $this->warrants_model->warrants_count($this->admin_id, $this->role_id);
+        $this->ajaxReturn($res_);
+    }
+
+    //权证列表
     public function loan_list(){
         switch($this->role_id){
             case 1:

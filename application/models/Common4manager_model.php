@@ -59,6 +59,11 @@ class Common4manager_model extends MY_Model
         return $data;
     }
 
+    //获取可以被分配的管理员名单
+    public function get_admin_fp_list() {
+        return $this->get_admin_work_list(-1);
+    }
+
     //服务管家
     public function get_fw_list() {
         return $this->get_admin_work_list(1);

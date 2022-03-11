@@ -475,18 +475,27 @@ class Warrants_model extends MY_Model
         return $this->fun_success('获取成功!', $warrants_info);
 	}
 
-    //单独获取借款人信息
-    public function warrants_sellers_info($b_id){
-        $this->db->select('a.brand_id, a.status, a.flag, a.user_id, a.mx_admin_id, a.fk_admin_id, a.qz_admin_id,b.*')->from('loan_master a');
-        $this->db->join('loan_borrowers b','a.loan_id = b.loan_id','left');
-        $this->db->where('b.id', $b_id);
-        $info_ = $this->db->get()->row_array();
-        if($info_){
-            return $this->fun_success('获取成功!', $info_);
-        }else{
-            return $this->fun_fail('信息不存在!');
-        }
+	private function warrants_count_where($flag, $status_wq, $status_yh, $status_gh, $admin_id, $need_choice_admin = -1){
 
+    }
+
+    public function warrants_count($admin_id, $role_id){
+        //待网签审核
+        $wq_1_num = $this->db->select('count(1) num')->from('warrants')->where(
+            array('flag' => 1, 'status_wq' => 1,'need_choice_admin' => -1, 'wq_admin_id' => $admin_id)
+        )->get()->row();
+        //待政审，网签完成
+        $wq_2_num = $this->db->select('count(1) num')->from('warrants')->where(
+            array('flag' => 1, 'status_wq' => 2,'need_choice_admin' => -1, 'wq_admin_id' => $admin_id)
+        )->get()->row();
+        //带首付/全款 托管
+        $yh_1_num = $this->db->select('count(1) num')->from('warrants')->where(
+            array('flag' => 1, 'status_yh' => 2,'need_choice_admin' => -1, 'yh_tg_admin_id' => $admin_id)
+        )->get()->row();
+
+        $yh_2_num = $this->db->select('count(1) num')->from('warrants')->where(
+            array('flag' => 1, 'status_yh' => 2,'need_choice_admin' => -1, 'yh_tg_admin_id' => $admin_id)
+        )->get()->row();
     }
 
     //管理员审核操作记录

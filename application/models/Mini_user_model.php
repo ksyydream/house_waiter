@@ -190,5 +190,16 @@ class Mini_user_model extends MY_Model
         return $this->fun_success('修改成功');
     }
 
+    public function get_users_by_brand_id(){
+        $brand_id = $this->input->post('brand_id')?trim($this->input->post('brand_id')):null;
+        if(!$brand_id || $brand_id <= 0)
+            return $this->fun_fail('必须传递门店ID');
+        $this->db->select('a.user_id,a.rel_name,a.mobile');
+        $this->db->from('users a');
+        $this->db->where(array('a.status' => 1, 'a.brand_id' => $brand_id));
+        $res = $this->db->get()->result_array();
+        return $this->fun_success('获取成功', $res);
+    }
+
 
 }
