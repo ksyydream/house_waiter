@@ -16,7 +16,7 @@ class Agency extends CI_Controller
         ini_set('date.timezone','Asia/Shanghai');
     }
 
-    //重载smarty方法assign
+    //重载smarty方法assign test
     public function assign($key,$val) {
         $this->cismarty->assign($key,$val);
     }
