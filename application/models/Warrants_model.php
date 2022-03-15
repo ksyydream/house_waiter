@@ -779,6 +779,24 @@ class Warrants_model extends MY_Model
         return $this->fun_fail('验证失败!');
     }
 
+    public function warrants_button_handle($admin_id, $role_id){
+        $warrants_id_ = $this->input->post('warrants_id');
+        if(!$warrants_id_)
+            return $this->fun_fail('权证单ID丢失!');
+        $action_btn_ = $this->input->post('action_btn');
+        if(!$action_btn_)
+            return $this->fun_fail('action丢失!');
+        $check_ = $this->check_permission($warrants_id_, $admin_id, 3);
+        if($check_['status'] != 1)
+            return $this->fun_fail($check_['msg']);
+        $btns_ = $check_['result'];
+        if(!$btns_ || !is_array($btns_) || !isset($btns_[$action_btn_]) || $btns_[$action_btn_] != 1)
+            return $this->fun_fail('权证单ID丢失!');
+
+        //DBY_problem 操作流程
+        return $this->fun_success('操作成功!');
+    }
+
     /**
      *********************************************************************************************
      * 以下代码为PC管理员端 专用
