@@ -638,7 +638,7 @@ class Warrants_model extends MY_Model
     /*
      * param $warrants_id 代表需要审核的单号
      * param $admin_id 代表需要判断的人员
-     * param $type 1 代表查看权限, 2代表 服务管家指派权限
+     * param $type 1 代表查看权限, 2代表 服务管家指派权限, 3代表显示可以展现的按钮
      * */
     public function check_permission($warrants_id = '', $admin_id = '', $type = 1){
         if(!$warrants_id)
@@ -713,6 +713,65 @@ class Warrants_model extends MY_Model
             case 2:
                 if ($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['flag'] == 1 && $warrants_info['need_choice_admin'] == 1)
                     return $this->fun_success('验证成功');
+                break;
+            case 3:
+                $buttons_ = array('choice_btn' => -1, 'release_btn' => -1, 'save_btn' => -1, 'submit_btn' => -1, 'miss_btn' => -1,
+                    'reject_wq_btn' => -1,'reject_yh_tg_btn' => -1,'reject_yh_aj_btn' => -1,'reject_gh_btn' => -1,'reject_gh_yy_btn' => -1,
+                    'wq_1' => -1, 'wq_2' => -1,
+                    'yh_1' => -1, 'yh_2' => -1, 'yh_3' => -1,
+                    'gh_1' => -1, 'gh_2' => -1, 'gh_3' => -1, 'gh_4' => -1,
+                );
+                if($warrants_info['flag'] == 1){
+                    if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['need_choice_admin'] == 1)
+                        $buttons_['choice_btn'] = 1;
+                    if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['status_wq'] == 0){
+                        $buttons_['submit_btn'] = 1;
+                        $buttons_['save_btn'] = 1;
+                    }
+                    if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['is_mortgage'] == 1)
+                        $buttons_['release_btn'] = 1;
+                    if($warrants_info['need_choice_admin'] == -1){
+                        if($warrants_info['wq_admin_id'] == $admin_id && $warrants_info['status_wq'] == 1){
+                            $buttons_['wq_1'] = 1;
+                            $buttons_['reject_wq_btn'] = 1;
+                        }
+                        if($warrants_info['wq_admin_id'] == $admin_id && $warrants_info['status_wq'] == 2){
+                            $buttons_['wq_2'] = 1;
+                            $buttons_['reject_wq_btn'] = 1;
+                        }
+                        if($warrants_info['yh_tg_admin_id'] == $admin_id && $warrants_info['status_yh'] == 1){
+                            $buttons_['yh_1'] = 1;
+                            $buttons_['reject_yh_tg_btn'] = 1;
+                        }
+                        if($warrants_info['yh_aj_admin_id'] == $admin_id && $warrants_info['status_yh'] == 2){
+                            $buttons_['yh_2'] = 1;
+                            $buttons_['reject_yh_aj_btn'] = 1;
+                        }
+                        if($warrants_info['yh_aj_admin_id'] == $admin_id && $warrants_info['status_yh'] == 3){
+                            $buttons_['yh_3'] = 1;
+                            $buttons_['reject_yh_aj_btn'] = 1;
+                        }
+                        if($warrants_info['gh_yy_admin_id'] == $admin_id && $warrants_info['status_gh'] == 1){
+                            $buttons_['gh_1'] = 1;
+                            $buttons_['reject_gh_yy_btn'] = 1;
+                        }
+                        if($warrants_info['gh_admin_id'] == $admin_id && $warrants_info['status_gh'] == 2){
+                            $buttons_['gh_2'] = 1;
+                            $buttons_['miss_btn'] = 1;
+                            $buttons_['reject_gh_btn'] = 1;
+                        }
+                        if($warrants_info['gh_admin_id'] == $admin_id && $warrants_info['status_gh'] == 3){
+                            $buttons_['gh_3'] = 1;
+                            $buttons_['reject_gh_btn'] = 1;
+                        }
+                        if($warrants_info['gh_admin_id'] == $admin_id && $warrants_info['status_gh'] == 4){
+                            $buttons_['gh_4'] = 1;
+                            $buttons_['reject_gh_btn'] = 1;
+                        }
+                    }
+
+                }
+                return $this->fun_success('验证成功', $buttons_);
                 break;
             default:
                 return $this->fun_fail('操作异常!');
