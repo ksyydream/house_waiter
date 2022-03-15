@@ -550,6 +550,7 @@ class Warrants_model extends MY_Model
         }
     }
 
+    //业务流程
     public function get_warrants_admin_log_list(){
         $warrants_id = $this->input->post('warrants_id');
         if(!$warrants_id)
@@ -609,6 +610,15 @@ class Warrants_model extends MY_Model
                 $res[] = $new_line_;
         }
         return $this->fun_success('获取成功!', $res);
+    }
+
+    //权证单 待网签
+    public function get_warrants_qw_1_list($admin_id){
+        $page_ = $this->input->post('page') ? $this->input->post('page') : 1;
+        $where = array('wq_admin_id' => $admin_id, 'flag' => 1, 'status_wq' => 1, 'need_choice_admin' => -1);
+        $data = $this->warrants_list($where, 'a.create_time', 'desc', $page_, 8);
+        unset($data['data']);
+        return $data;
     }
 
     //管理员审核流程判断
