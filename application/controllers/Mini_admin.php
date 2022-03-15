@@ -75,6 +75,17 @@ class Mini_admin extends Mini_controller {
         $this->ajaxReturn($res_);
     }
 
+    //获取 权证单详情
+    public function warrants_info(){
+
+    }
+
+    //
+    public function warrants_admin_log_list(){
+        $res_ = $this->warrants_model->get_warrants_admin_log_list();
+        $this->ajaxReturn($res_);
+    }
+
    //获取等待网签的 权证单列表
     public function warrants_qw_1_list(){
 

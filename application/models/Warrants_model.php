@@ -242,6 +242,7 @@ class Warrants_model extends MY_Model
             $warrants_id = $this->db->insert_id();
         }
         $this->save_b_s($buyers, $sellers, $warrants_id);
+        $this->save_warrants_log4admin($warrants_id, $fw_admin_id, 1,1,'提交进件');
         return $this->fun_success('操作成功',array('warrants_id' => $warrants_id));
 
     }
@@ -534,18 +535,80 @@ class Warrants_model extends MY_Model
     }
 
     //管理员审核操作记录
-    private function save_loan_log4admin($loan_id, $admin_id, $action_type){
-        $check_status_ = $this->db->select('status')->from('loan_master')->where('loan_id', $loan_id)->get()->row_array();
+    private function save_warrants_log4admin($warrants_id, $admin_id, $status_type, $f_status, $msg){
+        $check_status_ = $this->db->select('status_wq, status_yh, status_gh, need_mortgage')->from('warrants')->where('warrants_id', $warrants_id)->get()->row_array();
         if($check_status_){
             $insert_= array(
-                'admin_id' => $admin_id,
-                'loan_id' => $loan_id,
-                'action_type' => $action_type,
-                'status' => $check_status_['status'],
-                'cdate' => time()
+                'm_id' => $admin_id,
+                'warrants_id' => $warrants_id,
+                'status_type' => $status_type,
+                'f_status' => $f_status,
+                'add_time' => time(),
+                'msg' => $msg
             );
-            $this->db->insert('loan_log', $insert_);
+            $this->db->insert('warrants_status_log', $insert_);
         }
+    }
+
+    public function get_warrants_admin_log_list(){
+        $warrants_id = $this->input->post('warrants_id');
+        if(!$warrants_id)
+            return $this->fun_fail('参数缺失!');
+        $this->db->select('a.admin_name,FROM_UNIXTIME(wsl.add_time) add_time_, wsl.msg')->from('warrants_status_log wsl');
+        $this->db->join('admin a', 'wsl.m_id = a.admin_id', 'left');
+        $this->db->where('warrants_id', $warrants_id);
+        $this->db->where('is_delete', -1);
+        $res = $this->db->order_by('add_time','asc')->get()->result_array();
+        $check_status_ = $this->db->select('ws.status_wq, ws.status_yh, ws.status_gh, ws.need_mortgage, ws.need_choice_admin,
+         fw.admin_name fw_name,fw.phone fw_phone,
+        yh_tg.admin_name yh_tg_name,yh_tg.phone yh_tg_phone,
+        yh_aj.admin_name yh_aj_name,yh_aj.phone yh_aj_phone,
+        wq.admin_name wq_name,wq.phone wq_phone,
+        gh.admin_name gh_name,gh.phone gh_phone,
+         gh_yy.admin_name gh_yy_name,gh_yy.phone gh_yy_phone
+        ')
+            ->from('warrants ws')
+            ->join('admin fw', 'ws.fw_admin_id = fw.admin_id', 'left')
+            ->join('admin yh_tg', 'ws.yh_tg_admin_id = yh_tg.admin_id', 'left')
+            ->join('admin yh_aj', 'ws.yh_aj_admin_id = yh_aj.admin_id', 'left')
+            ->join('admin wq', 'ws.wq_admin_id = wq.admin_id', 'left')
+            ->join('admin gh_yy', 'ws.gh_yy_admin_id = gh_yy.admin_id', 'left')
+            ->join('admin gh', 'ws.gh_admin_id = gh.admin_id', 'left')
+            ->where(array('ws.warrants_id' => $warrants_id, 'ws.flag' => 1))->get()->row_array();
+        $new_line_ = array('add_time_' => '');
+        if ($check_status_ && $check_status_['status_gh'] < 5){
+            if($check_status_['status_gh'] == 4){
+                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['gh_name'] : '';
+                $new_line_['msg'] = '待递交银行资料';
+            }elseif ($check_status_['status_gh'] == 3){
+                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['gh_name'] : '';
+                $new_line_['msg'] = '待出证';
+            }elseif ($check_status_['status_gh'] == 2){
+                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['gh_name'] : '';
+                $new_line_['msg'] = '待过户';
+            }elseif ($check_status_['status_gh'] == 1){
+                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['gh_yy_name'] : '';
+                $new_line_['msg'] = '待过户';
+            }elseif ($check_status_['status_yh'] == 3){
+                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['yh_aj_name'] : '';
+                $new_line_['msg'] = '待按揭托管';
+            }elseif ($check_status_['status_yh'] == 2){
+                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['yh_aj_name'] : '';
+                $new_line_['msg'] = '待按揭面签';
+            }elseif ($check_status_['status_yh'] == 1){
+                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['yh_tg_name'] : '';
+                $new_line_['msg'] = $check_status_['need_mortgage'] == 1 ? '待首付托管' : '待全款托管';
+            }elseif ($check_status_['status_wq'] == 1){
+                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['wq_name'] : '';
+                $new_line_['msg'] = '待网签';
+            }elseif ($check_status_['status_wq'] == 1){
+                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['fw_name'] : '';
+                $new_line_['msg'] = '等待提交进件';
+            }
+            if (isset( $new_line_['msg']))
+                $res[] = $new_line_;
+        }
+        return $this->fun_success('获取成功!', $res);
     }
 
     //管理员审核流程判断
