@@ -64,77 +64,20 @@ class Mini_admin extends Mini_controller {
     }
 
     //获取需要处理 权证单各个状态的数量
-    public function warrants_count(){
-        $res_ = $this->warrants_model->warrants_count($this->admin_id, $this->role_id);
+    public function warrants_count4admin(){
+        $res_ = $this->warrants_model->warrants_count4admin($this->admin_id, $this->role_id);
         $this->ajaxReturn($res_);
     }
 
-    //权证列表
-    public function loan_list(){
-        switch($this->role_id){
-            case 1:
-                $rs = $this->loan_model->loan_list4mx($this->admin_id);
-                $this->ajaxReturn($rs);
-                break;
-            case 2:
-                $rs = $this->loan_model->loan_list4fk($this->admin_id);
-                $this->ajaxReturn($rs);
-                break;
-            case 3:
-                //权证
-                $rs = $this->loan_model->loan_list4qz($this->admin_id);
-                $this->ajaxReturn($rs);
-                break;
-            case 4:
-                //财务
-                $rs = $this->loan_model->loan_list4cw($this->admin_id);
-                $this->ajaxReturn($rs);
-                break;
-            case 5:
-                //终审
-                $rs = $this->loan_model->loan_list4zs($this->admin_id);
-                $this->ajaxReturn($rs);
-                break;
-            case 7:
-                //权证 交易中心
-                $rs = $this->loan_model->loan_list4fc($this->admin_id);
-                $this->ajaxReturn($rs);
-                break;
-            default:
-                $this->ajaxReturn($this->loan_model->fun_fail("未找到可用数据！"));
-
-        }
-
+    //服务管家各节点 需要设置人员的数量
+    public function warrants_count4fwadmin(){
+        $res_ = $this->warrants_model->warrants_count4FWadmin($this->admin_id, $this->role_id);
+        $this->ajaxReturn($res_);
     }
 
-    public function loan_info(){
-        $loan_id = $this->input->post('loan_id');
-        $rs = $this->loan_model->loan_info($loan_id);
-        if ($rs['status'] != 1) {
-            $this->ajaxReturn($rs);
-        }
-        //验证权限
-        $loan_info = $rs['result'];
-        //验证面签经理权限
-        if($this->role_id == 1 && $loan_info['mx_admin_id'] != $this->admin_id){
-            $this->ajaxReturn($this->loan_model->fun_fail("您无权限操作此单！"));
-        }
-        //验证风控经理权限
-        if($this->role_id == 2 && $loan_info['fk_admin_id'] != $this->admin_id){
-            $this->ajaxReturn($this->loan_model->fun_fail("您无权限操作此单！"));
-        }
-        //验证权证(银行)权限
-        if($this->role_id == 3 && $loan_info['qz_admin_id'] != $this->admin_id){
-            $this->ajaxReturn($this->loan_model->fun_fail("您无权限操作此单！"));
-        }
-        //验证权证(交易中心)权限
-        if($this->role_id == 7 && $loan_info['fc_admin_id'] != $this->admin_id){
-            $this->ajaxReturn($this->loan_model->fun_fail("您无权限操作此单！"));
-        }
+   //获取等待网签的 权证单列表
+    public function warrants_qw_1_list(){
 
-
-        //返回信息
-        $this->ajaxReturn($this->loan_model->fun_success("获取成功！", $loan_info));
     }
 
     /**

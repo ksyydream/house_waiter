@@ -475,27 +475,62 @@ class Warrants_model extends MY_Model
         return $this->fun_success('获取成功!', $warrants_info);
 	}
 
-	private function warrants_count_where($flag, $status_wq, $status_yh, $status_gh, $admin_id, $need_choice_admin = -1){
-
+	//节点管理员 获取权证单数量
+    public function warrants_count4admin($admin_id, $role_id){
+        return $this->warrants_count($admin_id);
     }
 
-    public function warrants_count($admin_id, $role_id){
-        //待网签审核
-        $wq_1_num = $this->db->select('count(1) num')->from('warrants')->where(
-            array('flag' => 1, 'status_wq' => 1,'need_choice_admin' => -1, 'wq_admin_id' => $admin_id)
-        )->get()->row();
-        //待政审，网签完成
-        $wq_2_num = $this->db->select('count(1) num')->from('warrants')->where(
-            array('flag' => 1, 'status_wq' => 2,'need_choice_admin' => -1, 'wq_admin_id' => $admin_id)
-        )->get()->row();
-        //带首付/全款 托管
-        $yh_1_num = $this->db->select('count(1) num')->from('warrants')->where(
-            array('flag' => 1, 'status_yh' => 2,'need_choice_admin' => -1, 'yh_tg_admin_id' => $admin_id)
-        )->get()->row();
+    //获取 服务管家带设置人权证单数量
+    public function warrants_count4FWadmin($admin_id, $role_id){
+        $where_ = array('fw_admin_id' => $admin_id);
+        $where_def_ = array('flag' => 1, 'need_choice_admin >=' => 1);
+        return $this->warrants_count($admin_id, $where_, $where_def_);
+    }
 
-        $yh_2_num = $this->db->select('count(1) num')->from('warrants')->where(
-            array('flag' => 1, 'status_yh' => 2,'need_choice_admin' => -1, 'yh_tg_admin_id' => $admin_id)
-        )->get()->row();
+	//获取状态数量通用函数
+    private function warrants_count($admin_id, $where_ = array(), $where_def_ = array('flag' => 1, 'need_choice_admin' => -1)){
+
+        //待网签审核
+        $where_wq_num_ = $where_ == array() ? array('wq_admin_id' => $admin_id) : $where_;
+        $wq_1_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_wq' => 1))->where($where_def_)->where($where_wq_num_)->get()->row();
+
+        //待政审，网签完成
+        $wq_2_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_wq' => 2))->where($where_def_)->where($where_wq_num_)->get()->row();
+        unset($where_wq_num_);
+        //带首付/全款 托管
+        $where_yh_tg_num_ = $where_ == array() ? array('yh_tg_admin_id' => $admin_id) : $where_;
+        $yh_1_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_yh' => 1))->where($where_def_)->where($where_yh_tg_num_)->get()->row();
+        unset($where_yh_tg_num_);
+        //等待按揭面签
+        $where_yh_aj_num_ = $where_ == array() ? array('yh_aj_admin_id' => $admin_id) : $where_;
+        $yh_2_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_yh' => 2))->where($where_def_)->where($where_yh_aj_num_)->get()->row();
+        //等待按揭托管
+        $yh_3_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_yh' => 3))->where($where_def_)->where($where_yh_aj_num_)->get()->row();
+        unset($where_yh_aj_num_);
+        //等待预约过户
+        $where_gh_yy_num_ = $where_ == array() ? array('gh_yy_admin_id' => $admin_id) : $where_;
+        $gh_1_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_gh' => 1))->where($where_def_)->where($where_gh_yy_num_)->get()->row();
+        unset($where_gh_yy_num_);
+        //等待过户
+        $where_gh_num_ = $where_ == array() ? array('gh_admin_id' => $admin_id) : $where_;
+        $gh_2_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_gh' => 2))->where($where_def_)->where($where_gh_num_)->get()->row();
+        //等待 出证
+        $gh_3_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_gh' => 3))->where($where_def_)->where($where_gh_num_)->get()->row();
+        //等待 递交资料
+        $gh_4_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_gh' => 4))->where($where_def_)->where($where_gh_num_)->get()->row();
+        unset($where_gh_num_);
+        $result = array(
+            'wq_1_num' => $wq_1_num->num,
+            'wq_2_num' => $wq_2_num->num,
+            'yh_1_num' => $yh_1_num->num,
+            'yh_2_num' => $yh_2_num->num,
+            'yh_3_num' => $yh_3_num->num,
+            'gh_1_num' => $gh_1_num->num,
+            'gh_2_num' => $gh_2_num->num,
+            'gh_3_num' => $gh_3_num->num,
+            'gh_4_num' => $gh_4_num->num
+        );
+        return $this->fun_success('获取成功!', $result);
     }
 
     //管理员审核操作记录
@@ -528,7 +563,7 @@ class Warrants_model extends MY_Model
 
     /**
      *********************************************************************************************
-     * 以下代码为管理员端 专用
+     * 以下代码为PC管理员端 专用
      *********************************************************************************************
      */
 
