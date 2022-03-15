@@ -312,8 +312,6 @@ class Warrants_model extends MY_Model
         return $this->fun_success('操作成功');
     }
 
-
-
     //权证业务列表 私有 共用方法
     private function warrants_list($where, $order_1 = 'a.create_time', $order_2 = 'desc', $page_ = 1, $limit_ = -1){
         $res = array();
@@ -438,7 +436,9 @@ class Warrants_model extends MY_Model
     }
 
     //权证业务详情
-    public function warrants_info($warrants_id, $select_ = "*"){
+    public function warrants_info($warrants_id = '', $select_ = "*"){
+        if(!$warrants_id)
+            return $this->fun_fail('参数缺失!');
         $select = "a.*,FROM_UNIXTIME(a.create_time) warrants_cdate,
         FROM_UNIXTIME(a.submit_time) submit_cdate_,
        u.rel_name handle_name,u.mobile handle_mobile,
@@ -632,6 +632,92 @@ class Warrants_model extends MY_Model
         //DBY_problem 需要维护好 审核的流程规划
         // 先网签审核，在网签通过后 即status_wq = 2时，才可以进入银行托管流程，status_yh_tg才可以是1
         // 当need_mortgage为一时，才存在按揭流程，也就意味着 托管流程 status_yh_tg才可以是1 才会存在2的节点
+    }
+
+    //权限判断
+    /*
+     * param $warrants_id 代表需要审核的单号
+     * param $admin_id 代表需要判断的人员
+     * param $type 1 代表查看权限, 2代表 服务管家指派权限
+     * */
+    public function check_permission($warrants_id = '', $admin_id = '', $type = 1){
+        if(!$warrants_id)
+            return $this->fun_fail('参数丢失!');
+        if(!$admin_id)
+            return $this->fun_fail('参数丢失!!');
+        $warrants_info = $this->db->select('flag, status_wq, status_yh, status_gh,need_choice_admin,
+         need_mortgage, fw_admin_id,yh_aj_admin_id,yh_tg_admin_id,wq_admin_id,gh_yy_admin_id,gh_admin_id,is_mortgage
+         ')->from('warrants')->where('warrants_id', $warrants_id)->get()->row_array();
+        if (!$warrants_info){
+            return $this->fun_fail('未找到此单!');
+        }
+        switch ($type){
+            case 1:
+                /*** 检查 查看权限 ***/
+                //如果是服务管家 任何时候都可以看
+                if ($warrants_info['fw_admin_id'] == $admin_id)
+                    return $this->fun_success('验证成功');
+
+                //如果是网签经理 当政审结束后，任何时候都可以看
+                if ($warrants_info['wq_admin_id'] == $admin_id && $warrants_info['status_wq'] == 3)
+                    return $this->fun_success('验证成功');
+                //如果是网签经理 当政审还没结束时，需要保证不是驳回状态，即need_choice_admin= -1
+                if ($warrants_info['wq_admin_id'] == $admin_id && $warrants_info['status_wq'] < 3 && $warrants_info['need_choice_admin'] == -1)
+                    return $this->fun_success('验证成功');
+
+                //如果是银行托管经理，
+                if ($warrants_info['yh_tg_admin_id'] == $admin_id){
+                    if($warrants_info['status_hy'] > 1){
+                        //当首付/全款托管完成时 任何时候都可以看
+                        return $this->fun_success('验证成功');
+                    }elseif($warrants_info['status_hy'] == 1 && $warrants_info['need_choice_admin'] == -1){
+                        //当首付/全款托管未完成 需要保证不是驳回状态，即need_choice_admin= -1
+                        return $this->fun_success('验证成功');
+                    }
+                }
+
+                //如果是银行按揭经理，
+                if ($warrants_info['yh_aj_admin_id'] == $admin_id){
+                    if($warrants_info['status_hy'] == 4){
+                        //当按揭托管完成时 任何时候都可以看
+                        return $this->fun_success('验证成功');
+                    }elseif($warrants_info['status_hy'] < 4 && $warrants_info['status_hy'] > 1 && $warrants_info['need_choice_admin'] == -1){
+                        //当按揭托管未完成 需要保证不是驳回状态，即need_choice_admin= -1
+                        return $this->fun_success('验证成功');
+                    }
+                }
+
+                //如果是预约过户经理，
+                if ($warrants_info['gh_yy_admin_id'] == $admin_id){
+                    if($warrants_info['status_gh'] > 1){
+                        //当预约过户完成时 任何时候都可以看
+                        return $this->fun_success('验证成功');
+                    }elseif($warrants_info['status_gh'] == 1 && $warrants_info['need_choice_admin'] == -1){
+                        //当预约过户未完成 需要保证不是驳回状态，即need_choice_admin= -1
+                        return $this->fun_success('验证成功');
+                    }
+                }
+
+                //如果是过户经理，
+                if ($warrants_info['gh_admin_id'] == $admin_id){
+                    if($warrants_info['status_gh'] == 4){
+                        //当预约过户完成时 任何时候都可以看
+                        return $this->fun_success('验证成功');
+                    }elseif($warrants_info['status_gh'] < 4 && $warrants_info['status_gh'] > 1 && $warrants_info['need_choice_admin'] == -1){
+                        //当预约过户未完成 需要保证不是驳回状态，即need_choice_admin= -1
+                        return $this->fun_success('验证成功');
+                    }
+                }
+
+                break;
+            case 2:
+                if ($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['flag'] == 1 && $warrants_info['need_choice_admin'] == 1)
+                    return $this->fun_success('验证成功');
+                break;
+            default:
+                return $this->fun_fail('操作异常!');
+        }
+        return $this->fun_fail('验证失败!');
     }
 
     /**

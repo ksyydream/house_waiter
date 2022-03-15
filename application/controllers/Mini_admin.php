@@ -77,7 +77,12 @@ class Mini_admin extends Mini_controller {
 
     //获取 权证单详情
     public function warrants_info(){
-
+        $warrants_id_ = $this->input->post('warrants_id');
+        $check_ = $this->warrants_model->check_permission($warrants_id_, $this->admin_id, 1);
+        if($check_['status'] != 1)
+            $this->ajaxReturn($check_);
+        $res_ = $this->warrants_model->warrants_info($warrants_id_);
+        $this->ajaxReturn($res_);
     }
 
     //权证单 业务流程
