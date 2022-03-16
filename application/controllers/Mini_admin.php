@@ -69,7 +69,7 @@ class Mini_admin extends Mini_controller {
         $this->ajaxReturn($res_);
     }
 
-    //服务管家各节点 需要设置人员的数量
+    //服务管家的权证单 数量
     public function warrants_count4fwadmin(){
         $res_ = $this->warrants_model->warrants_count4FWadmin($this->admin_id, $this->role_id);
         $this->ajaxReturn($res_);

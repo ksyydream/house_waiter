@@ -481,7 +481,7 @@ class Warrants_model extends MY_Model
         return $this->warrants_count($admin_id);
     }
 
-    //获取 服务管家带设置人权证单数量
+    //获取 服务管家权证单数量
     public function warrants_count4FWadmin($admin_id, $role_id){
         $where_ = array('fw_admin_id' => $admin_id);
         $where_def_ = array('flag' => 1, 'need_choice_admin >=' => 1);
@@ -489,31 +489,31 @@ class Warrants_model extends MY_Model
     }
 
 	//获取状态数量通用函数
-    private function warrants_count($admin_id, $where_ = array(), $where_def_ = array('flag' => 1, 'need_choice_admin' => -1)){
+    private function warrants_count($admin_id, $where_ = array(), $where_def_ = array('flag' => 1)){
 
         //待网签审核
-        $where_wq_num_ = $where_ == array() ? array('wq_admin_id' => $admin_id) : $where_;
+        $where_wq_num_ = $where_ == array() ? array('wq_admin_id' => $admin_id, 'need_choice_admin_wq' => -1) : $where_;
         $wq_1_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_wq' => 1))->where($where_def_)->where($where_wq_num_)->get()->row();
 
         //待政审，网签完成
         $wq_2_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_wq' => 2))->where($where_def_)->where($where_wq_num_)->get()->row();
         unset($where_wq_num_);
         //带首付/全款 托管
-        $where_yh_tg_num_ = $where_ == array() ? array('yh_tg_admin_id' => $admin_id) : $where_;
+        $where_yh_tg_num_ = $where_ == array() ? array('yh_tg_admin_id' => $admin_id, 'need_choice_admin_yh_tg' => -1) : $where_;
         $yh_1_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_yh' => 1))->where($where_def_)->where($where_yh_tg_num_)->get()->row();
         unset($where_yh_tg_num_);
         //等待按揭面签
-        $where_yh_aj_num_ = $where_ == array() ? array('yh_aj_admin_id' => $admin_id) : $where_;
+        $where_yh_aj_num_ = $where_ == array() ? array('yh_aj_admin_id' => $admin_id, 'need_choice_admin_yh_aj' => -1) : $where_;
         $yh_2_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_yh' => 2))->where($where_def_)->where($where_yh_aj_num_)->get()->row();
         //等待按揭托管
         $yh_3_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_yh' => 3))->where($where_def_)->where($where_yh_aj_num_)->get()->row();
         unset($where_yh_aj_num_);
         //等待预约过户
-        $where_gh_yy_num_ = $where_ == array() ? array('gh_yy_admin_id' => $admin_id) : $where_;
+        $where_gh_yy_num_ = $where_ == array() ? array('gh_yy_admin_id' => $admin_id, 'need_choice_admin_gh_yy' => -1) : $where_;
         $gh_1_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_gh' => 1))->where($where_def_)->where($where_gh_yy_num_)->get()->row();
         unset($where_gh_yy_num_);
         //等待过户
-        $where_gh_num_ = $where_ == array() ? array('gh_admin_id' => $admin_id) : $where_;
+        $where_gh_num_ = $where_ == array() ? array('gh_admin_id' => $admin_id, 'need_choice_admin_gh' => -1) : $where_;
         $gh_2_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_gh' => 2))->where($where_def_)->where($where_gh_num_)->get()->row();
         //等待 出证
         $gh_3_num = $this->db->select('count(1) num')->from('warrants')->where(array('status_gh' => 3))->where($where_def_)->where($where_gh_num_)->get()->row();
@@ -560,7 +560,8 @@ class Warrants_model extends MY_Model
         $this->db->where('warrants_id', $warrants_id);
         $this->db->where('is_delete', -1);
         $res = $this->db->order_by('add_time','asc')->get()->result_array();
-        $check_status_ = $this->db->select('ws.status_wq, ws.status_yh, ws.status_gh, ws.need_mortgage, ws.need_choice_admin,
+        $check_status_ = $this->db->select('ws.status_wq, ws.status_yh, ws.status_gh, ws.need_mortgage,
+         ws.need_choice_admin_wq,ws.need_choice_admin_yh_tg,ws.need_choice_admin_yh_aj,ws.need_choice_admin_gh_yy,ws.need_choice_admin_gh,
          fw.admin_name fw_name,fw.phone fw_phone,
         yh_tg.admin_name yh_tg_name,yh_tg.phone yh_tg_phone,
         yh_aj.admin_name yh_aj_name,yh_aj.phone yh_aj_phone,
@@ -579,31 +580,31 @@ class Warrants_model extends MY_Model
         $new_line_ = array('add_time_' => '');
         if ($check_status_ && $check_status_['status_gh'] < 5){
             if($check_status_['status_gh'] == 4){
-                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['gh_name'] : '';
+                $new_line_['admin_name'] = $check_status_['need_choice_admin_gh'] == -1 ? $check_status_['gh_name'] : '';
                 $new_line_['msg'] = '待递交银行资料';
             }elseif ($check_status_['status_gh'] == 3){
-                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['gh_name'] : '';
+                $new_line_['admin_name'] = $check_status_['need_choice_admin_gh'] == -1 ? $check_status_['gh_name'] : '';
                 $new_line_['msg'] = '待出证';
             }elseif ($check_status_['status_gh'] == 2){
-                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['gh_name'] : '';
+                $new_line_['admin_name'] = $check_status_['need_choice_admin_gh'] == -1 ? $check_status_['gh_name'] : '';
                 $new_line_['msg'] = '待过户';
             }elseif ($check_status_['status_gh'] == 1){
-                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['gh_yy_name'] : '';
+                $new_line_['admin_name'] = $check_status_['need_choice_admin_gh_yy'] == -1 ? $check_status_['gh_yy_name'] : '';
                 $new_line_['msg'] = '待过户';
             }elseif ($check_status_['status_yh'] == 3){
-                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['yh_aj_name'] : '';
+                $new_line_['admin_name'] = $check_status_['need_choice_admin_yh_aj'] == -1 ? $check_status_['yh_aj_name'] : '';
                 $new_line_['msg'] = '待按揭托管';
             }elseif ($check_status_['status_yh'] == 2){
-                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['yh_aj_name'] : '';
+                $new_line_['admin_name'] = $check_status_['need_choice_admin_yh_aj'] == -1 ? $check_status_['yh_aj_name'] : '';
                 $new_line_['msg'] = '待按揭面签';
             }elseif ($check_status_['status_yh'] == 1){
-                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['yh_tg_name'] : '';
+                $new_line_['admin_name'] = $check_status_['need_choice_admin_yh_tg'] == -1 ? $check_status_['yh_tg_name'] : '';
                 $new_line_['msg'] = $check_status_['need_mortgage'] == 1 ? '待首付托管' : '待全款托管';
             }elseif ($check_status_['status_wq'] == 1){
-                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['wq_name'] : '';
+                $new_line_['admin_name'] = $check_status_['need_choice_admin_wq'] == -1 ? $check_status_['wq_name'] : '';
                 $new_line_['msg'] = '待网签';
             }elseif ($check_status_['status_wq'] == 1){
-                $new_line_['admin_name'] = $check_status_['need_choice_admin'] == -1 ? $check_status_['fw_name'] : '';
+                $new_line_['admin_name'] = $check_status_['need_choice_admin_wq'] == -1 ? $check_status_['fw_name'] : '';
                 $new_line_['msg'] = '等待提交进件';
             }
             if (isset( $new_line_['msg']))
@@ -615,7 +616,7 @@ class Warrants_model extends MY_Model
     //权证单 待网签
     public function get_warrants_qw_1_list($admin_id){
         $page_ = $this->input->post('page') ? $this->input->post('page') : 1;
-        $where = array('wq_admin_id' => $admin_id, 'flag' => 1, 'status_wq' => 1, 'need_choice_admin' => -1);
+        $where = array('wq_admin_id' => $admin_id, 'flag' => 1, 'status_wq' => 1, 'need_choice_admin_wq' => -1);
         $data = $this->warrants_list($where, 'a.create_time', 'desc', $page_, 8);
         unset($data['data']);
         return $data;
@@ -624,14 +625,18 @@ class Warrants_model extends MY_Model
     //管理员审核流程判断
     /*
      * param $warrants_id 代表需要审核的单号
-     * param $status_type 代表需要审核的工作流 直接使用栏位名称标注，例如 status_wq 就是网签工作流
-     * param $status_value 代表审核所指向的节点
+     * param $action_btn 代表所触发的按钮
      * param $admin_id 代表审核人
      * */
-    private function audit_warrants($warrants_id, $status_type, $status_value, $admin_id, $remark = ''){
-        //DBY_problem 需要维护好 审核的流程规划
+    private function audit_warrants($warrants_id, $admin_id, $action_btn){
         // 先网签审核，在网签通过后 即status_wq = 2时，才可以进入银行托管流程，status_yh_tg才可以是1
         // 当need_mortgage为一时，才存在按揭流程，也就意味着 托管流程 status_yh_tg才可以是1 才会存在2的节点
+
+        //因为已在check_permission中验证完 按钮事件触发权限，所以这里只需要执行就可以
+        switch ($action_btn){
+            case 'choice_btn':
+
+        }
     }
 
     //权限判断
@@ -645,7 +650,8 @@ class Warrants_model extends MY_Model
             return $this->fun_fail('参数丢失!');
         if(!$admin_id)
             return $this->fun_fail('参数丢失!!');
-        $warrants_info = $this->db->select('flag, status_wq, status_yh, status_gh,need_choice_admin,
+        $warrants_info = $this->db->select('flag, status_wq, status_yh, status_gh,
+         need_choice_admin_wq,need_choice_admin_yh_tg,need_choice_admin_yh_aj,need_choice_admin_gh_yy,need_choice_admin_gh,
          need_mortgage, fw_admin_id,yh_aj_admin_id,yh_tg_admin_id,wq_admin_id,gh_yy_admin_id,gh_admin_id,is_mortgage
          ')->from('warrants')->where('warrants_id', $warrants_id)->get()->row_array();
         if (!$warrants_info){
@@ -661,8 +667,8 @@ class Warrants_model extends MY_Model
                 //如果是网签经理 当政审结束后，任何时候都可以看
                 if ($warrants_info['wq_admin_id'] == $admin_id && $warrants_info['status_wq'] == 3)
                     return $this->fun_success('验证成功');
-                //如果是网签经理 当政审还没结束时，需要保证不是驳回状态，即need_choice_admin= -1
-                if ($warrants_info['wq_admin_id'] == $admin_id && $warrants_info['status_wq'] < 3 && $warrants_info['need_choice_admin'] == -1)
+                //如果是网签经理 当政审还没结束时，需要保证不是驳回状态，即need_choice_admin_wq= -1
+                if ($warrants_info['wq_admin_id'] == $admin_id && $warrants_info['status_wq'] < 3 && $warrants_info['need_choice_admin_wq'] == -1)
                     return $this->fun_success('验证成功');
 
                 //如果是银行托管经理，
@@ -670,8 +676,8 @@ class Warrants_model extends MY_Model
                     if($warrants_info['status_hy'] > 1){
                         //当首付/全款托管完成时 任何时候都可以看
                         return $this->fun_success('验证成功');
-                    }elseif($warrants_info['status_hy'] == 1 && $warrants_info['need_choice_admin'] == -1){
-                        //当首付/全款托管未完成 需要保证不是驳回状态，即need_choice_admin= -1
+                    }elseif($warrants_info['status_hy'] == 1 && $warrants_info['need_choice_admin_yh_tg'] == -1){
+                        //当首付/全款托管未完成 需要保证不是驳回状态
                         return $this->fun_success('验证成功');
                     }
                 }
@@ -681,8 +687,8 @@ class Warrants_model extends MY_Model
                     if($warrants_info['status_hy'] == 4){
                         //当按揭托管完成时 任何时候都可以看
                         return $this->fun_success('验证成功');
-                    }elseif($warrants_info['status_hy'] < 4 && $warrants_info['status_hy'] > 1 && $warrants_info['need_choice_admin'] == -1){
-                        //当按揭托管未完成 需要保证不是驳回状态，即need_choice_admin= -1
+                    }elseif($warrants_info['status_hy'] < 4 && $warrants_info['status_hy'] > 1 && $warrants_info['need_choice_admin_aj'] == -1){
+                        //当按揭托管未完成 需要保证不是驳回状态，
                         return $this->fun_success('验证成功');
                     }
                 }
@@ -692,8 +698,8 @@ class Warrants_model extends MY_Model
                     if($warrants_info['status_gh'] > 1){
                         //当预约过户完成时 任何时候都可以看
                         return $this->fun_success('验证成功');
-                    }elseif($warrants_info['status_gh'] == 1 && $warrants_info['need_choice_admin'] == -1){
-                        //当预约过户未完成 需要保证不是驳回状态，即need_choice_admin= -1
+                    }elseif($warrants_info['status_gh'] == 1 && $warrants_info['need_choice_admin_gh_yy'] == -1){
+                        //当预约过户未完成 需要保证不是驳回状态，
                         return $this->fun_success('验证成功');
                     }
                 }
@@ -703,58 +709,78 @@ class Warrants_model extends MY_Model
                     if($warrants_info['status_gh'] == 4){
                         //当预约过户完成时 任何时候都可以看
                         return $this->fun_success('验证成功');
-                    }elseif($warrants_info['status_gh'] < 4 && $warrants_info['status_gh'] > 1 && $warrants_info['need_choice_admin'] == -1){
-                        //当预约过户未完成 需要保证不是驳回状态，即need_choice_admin= -1
+                    }elseif($warrants_info['status_gh'] < 4 && $warrants_info['status_gh'] > 1 && $warrants_info['need_choice_admin_gh'] == -1){
+                        //当预约过户未完成 需要保证不是驳回状态，
                         return $this->fun_success('验证成功');
                     }
                 }
 
                 break;
             case 2:
-                if ($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['flag'] == 1 && $warrants_info['need_choice_admin'] == 1)
+                if ($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['flag'] == 1 &&
+                    ($warrants_info['need_choice_admin_wq'] != -1 || $warrants_info['need_choice_admin_yh_tg'] != -1 || $warrants_info['need_choice_admin_yh_aj'] != -1
+                        || $warrants_info['need_choice_admin_gh'] != -1 || $warrants_info['need_choice_admin_gh_yy'] != -1)
+                )
                     return $this->fun_success('验证成功');
                 break;
             case 3:
-                $buttons_ = array('choice_btn' => -1, 'release_btn' => -1, 'save_btn' => -1, 'submit_btn' => -1, 'miss_btn' => -1,
+                $buttons_ = array('release_btn' => -1, 'save_btn' => -1, 'submit_btn' => -1, 'miss_btn' => -1,
                     'reject_wq_btn' => -1,'reject_yh_tg_btn' => -1,'reject_yh_aj_btn' => -1,'reject_gh_btn' => -1,'reject_gh_yy_btn' => -1,
+                    'choice_wq_btn' => -1,'choice_yh_tg_btn' => -1,'choice_yh_aj_btn' => -1,'choice_gh_btn' => -1,'choice_gh_yy_btn' => -1,
                     'wq_1' => -1, 'wq_2' => -1,
                     'yh_1' => -1, 'yh_2' => -1, 'yh_3' => -1,
                     'gh_1' => -1, 'gh_2' => -1, 'gh_3' => -1, 'gh_4' => -1,
                 );
                 if($warrants_info['flag'] == 1){
-                    if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['need_choice_admin'] == 1)
-                        $buttons_['choice_btn'] = 1;
+                    if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['need_choice_admin_wq'] != -1)
+                        $buttons_['choice_wq_btn'] = 1;
+                    if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['need_choice_admin_yh_tg'] != -1)
+                        $buttons_['choice_yh_tg_btn'] = 1;
+                    if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['need_choice_admin_yh_aj'] != -1)
+                        $buttons_['choice_yh_aj_btn'] = 1;
+                    if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['need_choice_admin_gh_yy'] != -1)
+                        $buttons_['choice_gh_yy_btn'] = 1;
+                    if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['need_choice_admin_gh'] != -1)
+                        $buttons_['choice_gh_btn'] = 1;
                     if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['status_wq'] == 0){
                         $buttons_['submit_btn'] = 1;
                         $buttons_['save_btn'] = 1;
                     }
                     if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['is_mortgage'] == 1)
                         $buttons_['release_btn'] = 1;
-                    if($warrants_info['need_choice_admin'] == -1){
-                        if($warrants_info['wq_admin_id'] == $admin_id && $warrants_info['status_wq'] == 1){
+                    if($warrants_info['need_choice_admin_wq'] == -1) {
+                        if ($warrants_info['wq_admin_id'] == $admin_id && $warrants_info['status_wq'] == 1) {
                             $buttons_['wq_1'] = 1;
                             $buttons_['reject_wq_btn'] = 1;
                         }
-                        if($warrants_info['wq_admin_id'] == $admin_id && $warrants_info['status_wq'] == 2){
+                        if ($warrants_info['wq_admin_id'] == $admin_id && $warrants_info['status_wq'] == 2) {
                             $buttons_['wq_2'] = 1;
                             $buttons_['reject_wq_btn'] = 1;
                         }
-                        if($warrants_info['yh_tg_admin_id'] == $admin_id && $warrants_info['status_yh'] == 1){
+                    }
+                    if($warrants_info['need_choice_admin_yh_tg'] == -1) {
+                        if ($warrants_info['yh_tg_admin_id'] == $admin_id && $warrants_info['status_yh'] == 1) {
                             $buttons_['yh_1'] = 1;
                             $buttons_['reject_yh_tg_btn'] = 1;
                         }
-                        if($warrants_info['yh_aj_admin_id'] == $admin_id && $warrants_info['status_yh'] == 2){
+                    }
+                    if($warrants_info['need_choice_admin_yh_aj'] == -1) {
+                        if ($warrants_info['yh_aj_admin_id'] == $admin_id && $warrants_info['status_yh'] == 2) {
                             $buttons_['yh_2'] = 1;
                             $buttons_['reject_yh_aj_btn'] = 1;
                         }
-                        if($warrants_info['yh_aj_admin_id'] == $admin_id && $warrants_info['status_yh'] == 3){
+                        if ($warrants_info['yh_aj_admin_id'] == $admin_id && $warrants_info['status_yh'] == 3) {
                             $buttons_['yh_3'] = 1;
                             $buttons_['reject_yh_aj_btn'] = 1;
                         }
-                        if($warrants_info['gh_yy_admin_id'] == $admin_id && $warrants_info['status_gh'] == 1){
+                    }
+                    if($warrants_info['need_choice_admin_gh_yy'] == -1) {
+                        if ($warrants_info['gh_yy_admin_id'] == $admin_id && $warrants_info['status_gh'] == 1) {
                             $buttons_['gh_1'] = 1;
                             $buttons_['reject_gh_yy_btn'] = 1;
                         }
+                    }
+                    if($warrants_info['need_choice_admin_gh'] == -1) {
                         if($warrants_info['gh_admin_id'] == $admin_id && $warrants_info['status_gh'] == 2){
                             $buttons_['gh_2'] = 1;
                             $buttons_['miss_btn'] = 1;
@@ -791,9 +817,21 @@ class Warrants_model extends MY_Model
             return $this->fun_fail($check_['msg']);
         $btns_ = $check_['result'];
         if(!$btns_ || !is_array($btns_) || !isset($btns_[$action_btn_]) || $btns_[$action_btn_] != 1)
-            return $this->fun_fail('权证单ID丢失!');
+            return $this->fun_fail('权限异常，单据状态变更不可操作!');
+        switch ($action_btn_){
+            case 'release_btn':
+                $update = array('is_mortgage' => -1);
+                break;
+            case 'reject_wq_btn':
 
-        //DBY_problem 操作流程
+                break;
+            case 'wq_1':
+                $update = array('status_wq' => 2, 'status_yh' => 1);
+                break;
+            default:
+                return $this->fun_fail('操作失败!');
+        }
+
         return $this->fun_success('操作成功!');
     }
 
