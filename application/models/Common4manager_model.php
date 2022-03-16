@@ -74,6 +74,26 @@ class Common4manager_model extends MY_Model
         return $this->get_admin_work_list(3);
     }
 
+    //银行托管
+    public function get_yh_tg_list(){
+        return $this->get_admin_work_list(4);
+    }
+
+    //银行按揭
+    public function get_yh_aj_list(){
+        return $this->get_admin_work_list(5);
+    }
+
+    //预约过户人员
+    public function get_gh_yy_list(){
+        return $this->get_admin_work_list(6);
+    }
+
+    //过户人员
+    public function get_gh_list(){
+        return $this->get_admin_work_list(7);
+    }
+
     public function get_mx_list4loan(){
 
     }

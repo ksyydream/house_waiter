@@ -616,7 +616,7 @@ class Warrants_model extends MY_Model
     //权证单 待网签
     public function get_warrants_qw_1_list($admin_id){
         $page_ = $this->input->post('page') ? $this->input->post('page') : 1;
-        $where = array('wq_admin_id' => $admin_id, 'flag' => 1, 'status_wq' => 1, 'need_choice_admin_wq' => -1);
+        $where = array('wq_admin_id' => $admin_id, 'flag' => 1, 'status_wq in' => array(1, 2), 'need_choice_admin_wq' => -1);
         $data = $this->warrants_list($where, 'a.create_time', 'desc', $page_, 8);
         unset($data['data']);
         return $data;
@@ -893,6 +893,8 @@ class Warrants_model extends MY_Model
                 break;
             case 'gh_1':
                 //*预约过户*/
+                if($warrants_status_['status_wq'] != 3)
+                    return $this->fun_fail('政审未完成，不可预约过户!');
                 $update = array('status_gh' => 2, 'gh_2_time' => time(), 'modify_time' => time(), 'need_choice_admin_gh' => 1);
                 $res_ = $this->db->where(array('flag' => 1, 'status_gh' => 1, 'warrants_id' => $warrants_id_))->update('warrants', $update);
                 if($res_){
