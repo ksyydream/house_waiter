@@ -242,7 +242,7 @@ class Warrants_model extends MY_Model
             $warrants_id = $this->db->insert_id();
         }
         $this->save_b_s($buyers, $sellers, $warrants_id);
-        $this->save_warrants_log4admin($warrants_id, $fw_admin_id, 1,1,'提交进件');
+        $this->save_warrants_log4status($warrants_id, $fw_admin_id, 1,1,'提交进件');
         return $this->fun_success('操作成功',array('warrants_id' => $warrants_id));
 
     }
@@ -484,7 +484,7 @@ class Warrants_model extends MY_Model
     //获取 服务管家权证单数量
     public function warrants_count4FWadmin($admin_id, $role_id){
         $where_ = array('fw_admin_id' => $admin_id);
-        $where_def_ = array('flag' => 1, 'need_choice_admin >=' => 1);
+        $where_def_ = array('flag' => 1);
         return $this->warrants_count($admin_id, $where_, $where_def_);
     }
 
@@ -535,7 +535,7 @@ class Warrants_model extends MY_Model
     }
 
     //管理员审核操作记录
-    private function save_warrants_log4admin($warrants_id, $admin_id, $status_type, $f_status, $msg){
+    private function save_warrants_log4status($warrants_id, $admin_id, $status_type, $f_status, $msg){
         $check_status_ = $this->db->select('status_wq, status_yh, status_gh, need_mortgage')->from('warrants')->where('warrants_id', $warrants_id)->get()->row_array();
         if($check_status_){
             $insert_= array(
@@ -551,7 +551,7 @@ class Warrants_model extends MY_Model
     }
 
     //业务流程
-    public function get_warrants_admin_log_list(){
+    public function get_warrants_status_log_list(){
         $warrants_id = $this->input->post('warrants_id');
         if(!$warrants_id)
             return $this->fun_fail('参数缺失!');
@@ -724,7 +724,9 @@ class Warrants_model extends MY_Model
                     return $this->fun_success('验证成功');
                 break;
             case 3:
-                $buttons_ = array('release_btn' => -1, 'save_btn' => -1, 'submit_btn' => -1, 'miss_btn' => -1,
+                $buttons_ = array('release_btn' => -1,
+                    //'save_btn' => -1, 'submit_btn' => -1,
+                    'miss_btn' => -1,
                     'reject_wq_btn' => -1,'reject_yh_tg_btn' => -1,'reject_yh_aj_btn' => -1,'reject_gh_btn' => -1,'reject_gh_yy_btn' => -1,
                     'choice_wq_btn' => -1,'choice_yh_tg_btn' => -1,'choice_yh_aj_btn' => -1,'choice_gh_btn' => -1,'choice_gh_yy_btn' => -1,
                     'wq_1' => -1, 'wq_2' => -1,
@@ -743,8 +745,8 @@ class Warrants_model extends MY_Model
                     if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['need_choice_admin_gh'] != -1)
                         $buttons_['choice_gh_btn'] = 1;
                     if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['status_wq'] == 0){
-                        $buttons_['submit_btn'] = 1;
-                        $buttons_['save_btn'] = 1;
+                        //$buttons_['submit_btn'] = 1;
+                        //$buttons_['save_btn'] = 1;
                     }
                     if($warrants_info['fw_admin_id'] == $admin_id && $warrants_info['is_mortgage'] == 1)
                         $buttons_['release_btn'] = 1;
@@ -818,15 +820,113 @@ class Warrants_model extends MY_Model
         $btns_ = $check_['result'];
         if(!$btns_ || !is_array($btns_) || !isset($btns_[$action_btn_]) || $btns_[$action_btn_] != 1)
             return $this->fun_fail('权限异常，单据状态变更不可操作!');
+        $warrants_status_ = $this->db->select('status_wq, status_yh, status_gh, need_mortgage')->from('warrants')->where('warrants_id', $warrants_id_)->get()->row_array();
         switch ($action_btn_){
             case 'release_btn':
-                $update = array('is_mortgage' => -1);
+                $update = array('is_mortgage' => -1, 'release_time' => time());
+                $res_ = $this->db->where(array('flag' => 1, 'is_mortgage' => 1, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4status($warrants_id_, $admin_id, 4, 1, '房屋解押');
+                }else{
+                    return $this->fun_fail('操作异常!');
+                }
                 break;
             case 'reject_wq_btn':
 
                 break;
             case 'wq_1':
-                $update = array('status_wq' => 2, 'status_yh' => 1);
+                $update = array('status_wq' => 2, 'status_yh' => 1, 'need_choice_admin_yh_tg' => 1, 'wq_2_time' => time(), 'modify_time' => time());
+                $res_ = $this->db->where(array('flag' => 1, 'status_wq' => 1, 'status_yh' => 0, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4status($warrants_id_, $admin_id, 1, 2, '网签成功');
+                }else{
+                    return $this->fun_fail('操作异常!');
+                }
+                break;
+            case 'wq_2':
+                $update = array('status_wq' => 3, 'wq_3_time' => time(), 'modify_time' => time());
+                $res_ = $this->db->where(array('flag' => 1, 'status_wq' => 2, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4status($warrants_id_, $admin_id, 1, 3, '政审成功');
+                }else{
+                    return $this->fun_fail('操作异常!');
+                }
+                break;
+            case 'hy_1':
+                $update = array('status_yh' => 2, 'yh_2_time' => time(), 'modify_time' => time());
+                $msg_ = '首付托管完成';
+                if($warrants_status_['need_mortgage'] == -1){
+                    $update['status_yh'] = 4;
+                    $update['status_gh'] = 1;
+                    $update['yh_4_time'] = time();
+                    unset($update['yh_2_time']);
+                    $update['need_choice_admin_gh_yy'] = 1;
+                    $msg_ = '全款托管完成';
+                }else{
+                    $update['need_choice_admin_yh_aj'] = 1;
+                }
+                $res_ = $this->db->where(array('flag' => 1, 'status_yh' => 1, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4status($warrants_id_, $admin_id, 2, $update['status_yh'], $msg_);
+                }else{
+                    return $this->fun_fail('操作异常!');
+                }
+                break;
+            case 'yh_2':
+                $update = array('status_yh' => 3, 'yh_3_time' => time(), 'modify_time' => time());
+                $res_ = $this->db->where(array('flag' => 1, 'status_yh' => 2, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4status($warrants_id_, $admin_id, 2, 3, '按揭面签完成');
+                }else{
+                    return $this->fun_fail('操作异常!');
+                }
+                break;
+            case 'yh_3':
+                //*按揭托管*/
+                $update = array('status_yh' => 4, 'yh_4_time' => time(), 'modify_time' => time(), 'status_gh' => 1, 'need_choice_admin_gh_yy' => 1);
+                $res_ = $this->db->where(array('flag' => 1, 'status_yh' => 3, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4status($warrants_id_, $admin_id, 2, 4, '按揭托管完成');
+                }else{
+                    return $this->fun_fail('操作异常!');
+                }
+                break;
+            case 'gh_1':
+                //*预约过户*/
+                $update = array('status_gh' => 2, 'gh_2_time' => time(), 'modify_time' => time(), 'need_choice_admin_gh' => 1);
+                $res_ = $this->db->where(array('flag' => 1, 'status_gh' => 1, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4status($warrants_id_, $admin_id, 3, $update['status_gh'], '预约过户完成');
+                }else{
+                    return $this->fun_fail('操作异常!');
+                }
+                break;
+            case 'gh_2':
+                $update = array('status_gh' => 3, 'gh_3_time' => time(), 'modify_time' => time());
+                $res_ = $this->db->where(array('flag' => 1, 'status_gh' => 2, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4status($warrants_id_, $admin_id, 2, $update['status_gh'], '过户完成');
+                }else{
+                    return $this->fun_fail('操作异常!');
+                }
+                break;
+            case 'gh_3':
+                $update = array('status_gh' => 4, 'yh_4_time' => time(), 'modify_time' => time());
+                $res_ = $this->db->where(array('flag' => 1, 'status_gh' => 3, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4status($warrants_id_, $admin_id, 2, $update['status_gh'], '出证完成');
+                }else{
+                    return $this->fun_fail('操作异常!');
+                }
+                break;
+            case 'gh_4':
+                $update = array('status_gh' => 5, 'yh_5_time' => time(), 'modify_time' => time(), 'flag' => 2);
+                $res_ = $this->db->where(array('flag' => 1, 'status_gh' => 4, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4status($warrants_id_, $admin_id, 2, $update['status_gh'], '提交资料完成');
+                }else{
+                    return $this->fun_fail('操作异常!');
+                }
                 break;
             default:
                 return $this->fun_fail('操作失败!');
@@ -844,62 +944,5 @@ class Warrants_model extends MY_Model
     public function warrants_list4manager($page = 1, $where = array()){
         $data = $this->warrants_list($where, 'a.create_time', 'desc', $page, $this->limit);
         return $data;
-    }
-
-    //修改工作流节点,在修改时判断上一节点是否完成 且只能修改进行中的赎楼单
-    public function status_change4loan($admin_id,$role_id){
-        $loan_id = $this->input->post('loan_id');
-        if(!$loan_id || $loan_id <= 0)
-            return $this->fun_fail('未传入必要信息!');
-        $loan_info = $this->db->select("flag,status,fk_admin_id,mx_time,fk_time,zs_time,has_wq,has_tg,has_nj,has_make_loan,has_gh")->from("loan_master")->where('loan_id', $loan_id)->get()->row_array();
-        if(!$loan_info)
-            return $this->fun_fail('申请单不存在!');
-        if($loan_info['flag'] != 1){
-            return $this->fun_fail('此赎楼申请单不在进行中,不可修改工作流!');
-        }
-        $status = $this->input->post('status');
-        if(!$status || !in_array($status, array(1,2,3,4,5,6,7,8,9)))
-            return $this->fun_fail('未传入合法的工作流!');
-        switch($status){
-            case 1:
-                break;
-            case 2:
-                if(!$loan_info['mx_time'])
-                    return $this->fun_fail('未完成面签审核,不可直接修改为风控!');
-                break;
-            case 3:
-                if(!$loan_info['fk_time'])
-                    return $this->fun_fail('未完成风控审核,不可直接修改为终审!');
-                break;
-            case 4:
-                if(!$loan_info['zs_time'])
-                    return $this->fun_fail('未完成终审审核,不可直接修改为待网签!');
-                break;
-            case 5:
-                if($loan_info['has_wq'] != 1)
-                    return $this->fun_fail('网签未通过,不可直接修改 待托管!');
-                break;
-            case 6:
-                if($loan_info['has_tg'] != 1)
-                    return $this->fun_fail('托管未通过,不可直接修改 待按揭放款!');
-                break;
-            case 7:
-                if($loan_info['has_nj'] != 1)
-                    return $this->fun_fail('按揭放款未通过,不可直接修改 待赎楼借款放款!');
-                break;
-            case 8:
-                if($loan_info['has_make_loan'] != 1)
-                    return $this->fun_fail('赎楼借款放款未通过,不可直接修改 待过户!');
-                break;
-            case 9:
-                if($loan_info['has_gh'] != 1)
-                    return $this->fun_fail('过户未通过,不可直接修改 待回款!');
-                break;
-            default:
-                break;
-
-        }
-        $this->db->where(array('loan_id' => $loan_id, 'flag' => 1))->update('loan_master', array('status' => $status));
-        return $this->fun_success('操作成功!');
     }
 }
