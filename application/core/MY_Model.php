@@ -769,6 +769,19 @@ class MY_Model extends CI_Model{
 
         return $groups;
     }
+
+    /** check fun */
+    public function check_admin_useful($admin_id){
+        $this->db->select('*')->from('admin');
+        $this->db->where('admin_id', $admin_id);
+        $this->db->where('status', 1);
+        $this->db->where('role_id >=', 1);
+        $this->db->where('role_id <>', 2);
+        $check_ = $this->db->get()->row_array();
+        if ($check_)
+            return true;
+        return false;
+    }
 }
 
 /* End of file MY_Model.php */

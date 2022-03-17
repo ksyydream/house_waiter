@@ -224,12 +224,6 @@ class Warrants_model extends MY_Model
             }
             if (!$data['qualification'])
                 return $this->fun_fail('购房资格必须选择!');
-            //if (!$data['huose_years'])
-                //return $this->fun_fail('产证年数必须填写!');
-            //if (!$data['house_num'])
-                //return $this->fun_fail('第几套房必须填写!');
-            //if (!$data['tax'])
-                //return $this->fun_fail('契税点数必须填写!');
             $check_b_s_ = $this->check_b_s($buyers, $sellers);
             if($check_b_s_['status'] == -1)
                 return $this->fun_fail($check_b_s_['msg']);
@@ -240,9 +234,13 @@ class Warrants_model extends MY_Model
             $data['order_num'] = $this->get_order_num();
             $this->db->insert('warrants', $data);
             $warrants_id = $this->db->insert_id();
+            $this->save_warrants_log4admin($warrants_id, $fw_admin_id, 'fw', 1);
         }
         $this->save_b_s($buyers, $sellers, $warrants_id);
-        $this->save_warrants_log4status($warrants_id, $fw_admin_id, 1,1,'提交进件');
+        if($is_submit){
+            $this->save_warrants_log4status($warrants_id, $fw_admin_id, 1,1,'提交进件');
+            $this->save_warrants_log4admin($warrants_id, $fw_admin_id, 'wq', 1);
+        }
         return $this->fun_success('操作成功',array('warrants_id' => $warrants_id));
 
     }
@@ -550,6 +548,64 @@ class Warrants_model extends MY_Model
         }
     }
 
+    //权证单 流转流程记录
+    //$handle_type 1代表正常 设置人员，2代表 驳回，3代表过号
+    //$work_code 表示节点的角色， 例如 wq 表示网签经理节点，
+    private function save_warrants_log4admin($warrants_id, $admin_id, $work_code, $handle_type){
+        $check_status_ = $this->db->select('status_wq, status_yh, status_gh, wq_admin_id, hy_tg_admin_id, hy_gj_admin_id, gh_yy_admin_id, gh_admin_id, fw_admin_id')
+            ->from('warrants')->where('warrants_id', $warrants_id)->get()->row_array();
+        $insert_= array(
+            'm_id' => $admin_id,
+            'warrants_id' => $warrants_id,
+            'add_time' => time(),
+            'handle_type' => $handle_type
+        );
+        $msg_type_ = array(1 => '设置', 2 => '驳回', 3 => '过号');
+        switch ($work_code){
+            case 'wq':
+                $insert_['sz_id'] = $check_status_['wq_admin_id'];
+                $insert_['status_type'] = 1;
+                $insert_['f_status'] = $check_status_['status_wq'];
+                $insert_['msg'] = '网签经理';
+                break;
+            case 'yh_tg':
+                $insert_['sz_id'] = $check_status_['yh_tg_admin_id'];
+                $insert_['status_type'] = 2;
+                $insert_['f_status'] = $check_status_['status_yh'];
+                $insert_['msg'] = '托管经理';
+                break;
+            case 'yh_aj':
+                $insert_['sz_id'] = $check_status_['yh_aj_admin_id'];
+                $insert_['status_type'] = 2;
+                $insert_['f_status'] = $check_status_['status_yh'];
+                $insert_['msg'] = '按揭经理';
+                break;
+            case 'gh_yy':
+                $insert_['sz_id'] = $check_status_['gh_yy_admin_id'];
+                $insert_['status_type'] = 3;
+                $insert_['f_status'] = $check_status_['status_gh'];
+                $insert_['msg'] = '预约专员';
+                break;
+            case 'gh':
+                $insert_['sz_id'] = $check_status_['gh_admin_id'];
+                $insert_['status_type'] = 3;
+                $insert_['f_status'] = $handle_type == 3 ? 2 : $check_status_['status_gh']; //这里要考虑是否是过号，过号是一种特殊的驳回 是唯一一种会改变流程节点的 人员变更操作，所以要特殊处理
+                $insert_['msg'] = '过户专员';
+                break;
+            case 'fw':
+                $insert_['sz_id'] = $check_status_['fw_admin_id'];
+                $insert_['status_type'] = 1;
+                $insert_['f_status'] = 0;
+                $insert_['msg'] = '服务管家';
+                break;
+            default:
+                return $this->fun_fail('操作异常！');
+        }
+
+        $this->db->insert('warrants_status_log', $insert_);
+        return $this->fun_success('操作成功！');
+    }
+
     //业务流程
     public function get_warrants_status_log_list(){
         $warrants_id = $this->input->post('warrants_id');
@@ -808,10 +864,17 @@ class Warrants_model extends MY_Model
     }
 
     public function warrants_button_handle($admin_id, $role_id){
+        //把可能需要的参数 都在最前面获取，以便接口调试
         $warrants_id_ = $this->input->post('warrants_id');
+        $action_btn_ = $this->input->post('action_btn');
+        $zs_flag_ = $this->input->post('zs_flag'); //政审标签，只在网签审核使用，如果是1 就代表连同网签一起审核
+        $choice_wq_admin_id = $this->input->post('wq_admin_id') ? $this->input->post('wq_admin_id') : '';
+        $choice_yh_tg_admin_id = $this->input->post('yh_tg_admin_id') ? $this->input->post('yh_tg_admin_id') : '';
+        $choice_yh_aj_admin_id = $this->input->post('yh_aj_admin_id') ? $this->input->post('yh_aj_admin_id') : '';
+        $choice_gh_yy_admin_id = $this->input->post('gh_yy_admin_id') ? $this->input->post('gh_yy_admin_id') : '';
+        $choice_gh_admin_id = $this->input->post('gh_admin_id') ? $this->input->post('gh_admin_id') : '';
         if(!$warrants_id_)
             return $this->fun_fail('权证单ID丢失!');
-        $action_btn_ = $this->input->post('action_btn');
         if(!$action_btn_)
             return $this->fun_fail('action丢失!');
         $check_ = $this->check_permission($warrants_id_, $admin_id, 3);
@@ -820,8 +883,15 @@ class Warrants_model extends MY_Model
         $btns_ = $check_['result'];
         if(!$btns_ || !is_array($btns_) || !isset($btns_[$action_btn_]) || $btns_[$action_btn_] != 1)
             return $this->fun_fail('权限异常，单据状态变更不可操作!');
-        $warrants_status_ = $this->db->select('status_wq, status_yh, status_gh, need_mortgage')->from('warrants')->where('warrants_id', $warrants_id_)->get()->row_array();
+        $warrants_status_ = $this->db->select('status_wq, status_yh, status_gh, need_mortgage,is_mortgage')->from('warrants')->where('warrants_id', $warrants_id_)->get()->row_array();
         switch ($action_btn_){
+            case 'miss_btn':
+                $update = array('need_choice_admin_gh_yy' => 3, 'status_gh' => 1, 'modify_time' => time());
+                $res_ = $this->db->where(array('flag' => 1, 'warrants_id' => $warrants_id_, 'status_gh' => 2))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4admin($warrants_id_, $admin_id, 'gh', 3);
+                }
+                break;
             case 'release_btn':
                 $update = array('is_mortgage' => -1, 'release_time' => time());
                 $res_ = $this->db->where(array('flag' => 1, 'is_mortgage' => 1, 'warrants_id' => $warrants_id_))->update('warrants', $update);
@@ -831,14 +901,113 @@ class Warrants_model extends MY_Model
                     return $this->fun_fail('操作异常!');
                 }
                 break;
+            case 'choice_wq_btn':
+                if(!$choice_wq_admin_id)
+                    return $this->fun_fail('请选择网签经理！');
+                $check_admin_id_useful_ = $this->check_admin_useful($choice_wq_admin_id);
+                if(!$check_admin_id_useful_)
+                    return $this->fun_fail('此人员不可用！');
+                $update = array('wq_admin_id' => $choice_wq_admin_id, 'need_choice_admin_wq' => -1);
+                $res_ = $this->db->where(array('flag' => 1, 'need_choice_admin_wq <>' => -1, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4admin($warrants_id_, $admin_id, 'wq', 1);
+                }
+                break;
+            case 'choice_yh_tg_btn':
+                if(!$choice_yh_tg_admin_id)
+                    return $this->fun_fail('请选择托管经理！');
+                $check_admin_id_useful_ = $this->check_admin_useful($choice_yh_tg_admin_id);
+                if(!$check_admin_id_useful_)
+                    return $this->fun_fail('此人员不可用！');
+                $update = array('yh_tg_admin_id' => $choice_yh_tg_admin_id, 'need_choice_admin_yh_tg' => -1);
+                $res_ = $this->db->where(array('flag' => 1, 'need_choice_admin_yh_tg <>' => -1, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4admin($warrants_id_, $admin_id, 'yh_tg', 1);
+                }
+                break;
+            case 'choice_yh_aj_btn':
+                if(!$choice_yh_aj_admin_id)
+                    return $this->fun_fail('请选择按揭经理！');
+                $check_admin_id_useful_ = $this->check_admin_useful($choice_yh_aj_admin_id);
+                if(!$check_admin_id_useful_)
+                    return $this->fun_fail('此人员不可用！');
+                $update = array('yh_aj_admin_id' => $choice_yh_aj_admin_id, 'need_choice_admin_yh_aj' => -1);
+                $res_ = $this->db->where(array('flag' => 1, 'need_choice_admin_yh_aj <>' => -1, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4admin($warrants_id_, $admin_id, 'yh_aj', 1);
+                }
+                break;
+            case 'choice_gh_btn':
+                if(!$choice_gh_admin_id)
+                    return $this->fun_fail('请选择过户专员！');
+                $check_admin_id_useful_ = $this->check_admin_useful($choice_gh_admin_id);
+                if(!$check_admin_id_useful_)
+                    return $this->fun_fail('此人员不可用！');
+                $update = array('gh_admin_id' => $choice_gh_admin_id, 'need_choice_admin_gh' => -1);
+                $res_ = $this->db->where(array('flag' => 1, 'need_choice_admin_gh <>' => -1, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4admin($warrants_id_, $admin_id, 'gh', 1);
+                }
+                break;
+            case 'choice_gh_yy_btn':
+                if(!$choice_gh_yy_admin_id)
+                    return $this->fun_fail('请选择预约专员！');
+                $check_admin_id_useful_ = $this->check_admin_useful($choice_gh_yy_admin_id);
+                if(!$check_admin_id_useful_)
+                    return $this->fun_fail('此人员不可用！');
+                $update = array('gh_yy_admin_id' => $choice_gh_yy_admin_id, 'need_choice_admin_gh_yy' => -1);
+                $res_ = $this->db->where(array('flag' => 1, 'need_choice_admin_gh_yy <>' => -1, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4admin($warrants_id_, $admin_id, 'gh_yy', 1);
+                }
+                break;
             case 'reject_wq_btn':
-
+                $update = array('need_choice_admin_wq' => 2);
+                $res_ = $this->db->where(array('flag' => 1, 'status_wq <' => 3, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4admin($warrants_id_, $admin_id, 'wq', 2);
+                }
+                break;
+            case 'reject_yh_tg_btn':
+                $update = array('need_choice_admin_yh_tg' => 2);
+                $res_ = $this->db->where(array('flag' => 1, 'status_yh' => 1, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4admin($warrants_id_, $admin_id, 'yh_tg', 2);
+                }
+                break;
+            case 'reject_yh_aj_btn':
+                $update = array('need_choice_admin_yh_aj' => 2);
+                $res_ = $this->db->where(array('flag' => 1, 'status_yh <' => 4, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4admin($warrants_id_, $admin_id, 'yh_aj', 2);
+                }
+                break;
+            case 'reject_gh_yy_btn':
+                $update = array('need_choice_admin_gh_yy' => 2);
+                $res_ = $this->db->where(array('flag' => 1, 'status_gh' => 1, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4admin($warrants_id_, $admin_id, 'gh_yy', 2);
+                }
+                break;
+            case 'reject_gh_btn':
+                $update = array('need_choice_admin_gh' => 2);
+                $res_ = $this->db->where(array('flag' => 1, 'status_gh <' => 5, 'warrants_id' => $warrants_id_))->update('warrants', $update);
+                if($res_){
+                    $this->save_warrants_log4admin($warrants_id_, $admin_id, 'gh', 2);
+                }
                 break;
             case 'wq_1':
+                //增加需求 可以连同政审一起操作
                 $update = array('status_wq' => 2, 'status_yh' => 1, 'need_choice_admin_yh_tg' => 1, 'wq_2_time' => time(), 'modify_time' => time());
+                if($zs_flag_){
+                    $update['status_wq'] = 3;
+                    $update['wq_3_time'] = time();
+                }
                 $res_ = $this->db->where(array('flag' => 1, 'status_wq' => 1, 'status_yh' => 0, 'warrants_id' => $warrants_id_))->update('warrants', $update);
                 if($res_){
                     $this->save_warrants_log4status($warrants_id_, $admin_id, 1, 2, '网签成功');
+                    if($zs_flag_)
+                        $this->save_warrants_log4status($warrants_id_, $admin_id, 1, 3, '政审成功');
                 }else{
                     return $this->fun_fail('操作异常!');
                 }
@@ -904,6 +1073,8 @@ class Warrants_model extends MY_Model
                 }
                 break;
             case 'gh_2':
+                if($warrants_status_['is_mortgage'] != -1)
+                    return $this->fun_fail('房屋未解押，不可过户!');
                 $update = array('status_gh' => 3, 'gh_3_time' => time(), 'modify_time' => time());
                 $res_ = $this->db->where(array('flag' => 1, 'status_gh' => 2, 'warrants_id' => $warrants_id_))->update('warrants', $update);
                 if($res_){
