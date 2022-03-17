@@ -115,16 +115,9 @@ class Mini_admin extends Mini_controller {
      *********************************************************************************************
      */
 
-    //获取网签经理人员
-    public function get_wq_admin_list(){
-        $data = $this->c4m_model->get_wq_list();
-        $res_ = $this->mini_admin_model->fun_success('操作成功', $data);
-        $this->ajaxReturn($res_);
-    }
-
-    //获取银行托管人员
-    public function get_yh_tg_admin_list(){
-        $data = $this->c4m_model->get_yh_tg_list();
+    //获取各角色人员 除财务外
+    public function get_admin_list(){
+        $data = $this->c4m_model->get_single_list();
         $res_ = $this->mini_admin_model->fun_success('操作成功', $data);
         $this->ajaxReturn($res_);
     }

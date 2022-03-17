@@ -64,35 +64,24 @@ class Common4manager_model extends MY_Model
         return $this->get_admin_work_list(-1);
     }
 
+    //按照code 来获取单独角色的人员列表，也可以获取所有
+    public function get_single_list(){
+        $action_ = $this->input->post('identity_code') ? $this->input->post('identity_code') : '';
+        $this->db->select('a.admin_id, a.user, a.role_id, w.name role_name, a.admin_name')->from('admin a');
+        $this->db->join('work_role w','a.role_id = w.id','inner');
+        $this->db->where('a.status', 1);
+        if($action_)
+            $this->db->where('w.code', $action_);
+        $this->db->where('a.role_id <>', 2);
+        $data = $this->db->get()->result_array();
+        return $data;
+    }
     //服务管家
     public function get_fw_list() {
         return $this->get_admin_work_list(1);
     }
 
-    //网签经理
-    public function get_wq_list() {
-        return $this->get_admin_work_list(3);
-    }
 
-    //银行托管
-    public function get_yh_tg_list(){
-        return $this->get_admin_work_list(4);
-    }
-
-    //银行按揭
-    public function get_yh_aj_list(){
-        return $this->get_admin_work_list(5);
-    }
-
-    //预约过户人员
-    public function get_gh_yy_list(){
-        return $this->get_admin_work_list(6);
-    }
-
-    //过户人员
-    public function get_gh_list(){
-        return $this->get_admin_work_list(7);
-    }
 
     public function get_mx_list4loan(){
 
