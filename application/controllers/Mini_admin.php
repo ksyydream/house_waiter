@@ -99,7 +99,13 @@ class Mini_admin extends Mini_controller {
 
     //权证单 业务流程
     public function warrants_status_log_list(){
-        $res_ = $this->warrants_model->get_warrants_status_log_list();
+        $res_ = $this->warrants_model->get_warrants_status_log_list($this->admin_id);
+        $this->ajaxReturn($res_);
+    }
+
+    //权证单 流转详情
+    public function warrants_admin_log_list(){
+        $res_ = $this->warrants_model->get_warrants_admin_log_list($this->admin_id);
         $this->ajaxReturn($res_);
     }
 

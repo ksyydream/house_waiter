@@ -65,8 +65,7 @@ class Warrants_model extends MY_Model
             'need_mortgage' => trim($this->input->post('need_mortgage')) ? trim($this->input->post('need_mortgage')) : -1,                              //是否需要贷款，【重要】,
             'flag' => 1,
             'status_wq' => 0,
-            'status_yh_tg' => 0,
-            'status_yh_aj' => 0,
+            'status_yh' => 0,
             'status_gh' => 0
 		);
 
@@ -91,7 +90,7 @@ class Warrants_model extends MY_Model
             $warrants_info_ = $this->db->select()->from('warrants')->where(array('warrants_id' => $warrants_id))->get()->row_array();
             if (!$warrants_info_)
                 return $this->fun_fail('权证单不存在!');
-            if ($warrants_info_['flag'] != 1 || $warrants_info_['status_wq'] != 0 || $warrants_info_['status_yh_tg'] != 0 || $warrants_info_['status_yh_aj'] != 0 || $warrants_info_['status_gh'] != 0 )
+            if ($warrants_info_['flag'] != 1 || $warrants_info_['status_wq'] != 0 || $warrants_info_['status_yh'] != 0 || $warrants_info_['status_gh'] != 0 )
                 return $this->fun_fail('权证单状态已变更 不可提交!');
             if ($warrants_info_['fw_admin_id'] != $fw_admin_id)
                 return $this->fun_fail('您没有此权证操作权限!');
@@ -131,8 +130,7 @@ class Warrants_model extends MY_Model
             'user_type' => trim($this->input->post('user_type')) ? trim($this->input->post('user_type')) : null,
             'flag' => 1,
             'status_wq' => 0,
-            'status_yh_tg' => 0,
-            'status_yh_aj' => 0,
+            'status_yh' => 0,
             'status_gh' => 0
         );
         $data['wq_admin_id'] = trim($this->input->post('wq_admin_id'));
@@ -552,7 +550,7 @@ class Warrants_model extends MY_Model
     //$handle_type 1代表正常 设置人员，2代表 驳回，3代表过号
     //$work_code 表示节点的角色， 例如 wq 表示网签经理节点，
     private function save_warrants_log4admin($warrants_id, $admin_id, $work_code, $handle_type){
-        $check_status_ = $this->db->select('status_wq, status_yh, status_gh, wq_admin_id, hy_tg_admin_id, hy_gj_admin_id, gh_yy_admin_id, gh_admin_id, fw_admin_id')
+        $check_status_ = $this->db->select('status_wq, status_yh, status_gh, wq_admin_id, yh_tg_admin_id, yh_aj_admin_id, gh_yy_admin_id, gh_admin_id, fw_admin_id')
             ->from('warrants')->where('warrants_id', $warrants_id)->get()->row_array();
         $insert_= array(
             'm_id' => $admin_id,
@@ -602,15 +600,19 @@ class Warrants_model extends MY_Model
                 return $this->fun_fail('操作异常！');
         }
 
-        $this->db->insert('warrants_status_log', $insert_);
+        $this->db->insert('warrants_admin_log', $insert_);
         return $this->fun_success('操作成功！');
     }
 
     //业务流程
-    public function get_warrants_status_log_list(){
+    public function get_warrants_status_log_list($admin_id){
         $warrants_id = $this->input->post('warrants_id');
         if(!$warrants_id)
             return $this->fun_fail('参数缺失!');
+        //检查是否有查看权限
+        $check_ = $this->check_permission($warrants_id, $admin_id, 1);
+        if($check_['status'] != 1)
+            return $check_;
         $this->db->select('a.admin_name,FROM_UNIXTIME(wsl.add_time) add_time_, wsl.msg')->from('warrants_status_log wsl');
         $this->db->join('admin a', 'wsl.m_id = a.admin_id', 'left');
         $this->db->where('warrants_id', $warrants_id);
@@ -669,6 +671,23 @@ class Warrants_model extends MY_Model
         return $this->fun_success('获取成功!', $res);
     }
 
+    //流转详情
+    public function get_warrants_admin_log_list($admin_id){
+        $warrants_id = $this->input->post('warrants_id');
+        if(!$warrants_id)
+            return $this->fun_fail('参数缺失!');
+        //检查是否有查看权限
+        $warrants_info = $this->db->select('fw_admin_id')->from('warrants')->where('warrants_id', $warrants_id)->get()->row_array();
+        if(!$warrants_info || $warrants_info['fw_admin_id'] != $admin_id)
+            return $this->fun_fail('您不是此单的服务管家，顾不可查看!');
+        $this->db->select('a.admin_name,FROM_UNIXTIME(wal.add_time) add_time_, wal.msg, wal.handle_type')->from('warrants_admin_log wal');
+        $this->db->join('admin a', 'wal.sz_id = a.admin_id', 'left');
+        $this->db->where('warrants_id', $warrants_id);
+        $this->db->where('is_delete', -1);
+        $res = $this->db->order_by('add_time','asc')->get()->result_array();
+        return $this->fun_success('获取成功!', $res);
+    }
+
     //权证单 待网签
     public function get_warrants_qw_1_list($admin_id){
         $page_ = $this->input->post('page') ? $this->input->post('page') : 1;
@@ -676,23 +695,6 @@ class Warrants_model extends MY_Model
         $data = $this->warrants_list($where, 'a.create_time', 'desc', $page_, 8);
         unset($data['data']);
         return $data;
-    }
-
-    //管理员审核流程判断
-    /*
-     * param $warrants_id 代表需要审核的单号
-     * param $action_btn 代表所触发的按钮
-     * param $admin_id 代表审核人
-     * */
-    private function audit_warrants($warrants_id, $admin_id, $action_btn){
-        // 先网签审核，在网签通过后 即status_wq = 2时，才可以进入银行托管流程，status_yh_tg才可以是1
-        // 当need_mortgage为一时，才存在按揭流程，也就意味着 托管流程 status_yh_tg才可以是1 才会存在2的节点
-
-        //因为已在check_permission中验证完 按钮事件触发权限，所以这里只需要执行就可以
-        switch ($action_btn){
-            case 'choice_btn':
-
-        }
     }
 
     //权限判断
@@ -729,10 +731,10 @@ class Warrants_model extends MY_Model
 
                 //如果是银行托管经理，
                 if ($warrants_info['yh_tg_admin_id'] == $admin_id){
-                    if($warrants_info['status_hy'] > 1){
+                    if($warrants_info['status_yh'] > 1){
                         //当首付/全款托管完成时 任何时候都可以看
                         return $this->fun_success('验证成功');
-                    }elseif($warrants_info['status_hy'] == 1 && $warrants_info['need_choice_admin_yh_tg'] == -1){
+                    }elseif($warrants_info['status_yh'] == 1 && $warrants_info['need_choice_admin_yh_tg'] == -1){
                         //当首付/全款托管未完成 需要保证不是驳回状态
                         return $this->fun_success('验证成功');
                     }
@@ -740,10 +742,10 @@ class Warrants_model extends MY_Model
 
                 //如果是银行按揭经理，
                 if ($warrants_info['yh_aj_admin_id'] == $admin_id){
-                    if($warrants_info['status_hy'] == 4){
+                    if($warrants_info['status_yh'] == 4){
                         //当按揭托管完成时 任何时候都可以看
                         return $this->fun_success('验证成功');
-                    }elseif($warrants_info['status_hy'] < 4 && $warrants_info['status_hy'] > 1 && $warrants_info['need_choice_admin_aj'] == -1){
+                    }elseif($warrants_info['status_yh'] < 4 && $warrants_info['status_yh'] > 1 && $warrants_info['need_choice_admin_aj'] == -1){
                         //当按揭托管未完成 需要保证不是驳回状态，
                         return $this->fun_success('验证成功');
                     }
