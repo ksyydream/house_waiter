@@ -113,7 +113,7 @@ class Warrants_model extends MY_Model
             'create_time' => time(),
             'modify_time' => time(),
             'total_price' => trim($this->input->post('total_price')),                                                                               //成交总价
-            'qualification' => $qualification_,                      //购房资格
+            'assess_price' => trim($this->input->post('assess_price')),
             'housing_area' => trim($this->input->post('housing_area')) ? trim($this->input->post('housing_area')) : null,                           //房屋面积
             'mortgage_bank_id' => trim($this->input->post('mortgage_bank_id')) ? trim($this->input->post('mortgage_bank_id')) : null,       //预计按揭银行ID
             'expect_mortgage_money' => trim($this->input->post('mortgage_money')) ? trim($this->input->post('mortgage_money')) : null,    //预计按揭金额
@@ -122,12 +122,17 @@ class Warrants_model extends MY_Model
             'house_location' => trim($this->input->post('house_location')) ? trim($this->input->post('house_location')) : '',                           //房屋坐落
             'huose_years' => trim($this->input->post('huose_years')) ? trim($this->input->post('huose_years')) : null,                                  //产证年数
             'is_mortgage' => trim($this->input->post('is_mortgage')) ? trim($this->input->post('is_mortgage')) : null,                                  //房屋是否抵押中
-            'need_mortgage' => trim($this->input->post('need_mortgage')) ? trim($this->input->post('need_mortgage')) : -1,                              //是否需要贷款，【重要】,
-            'house_num' => trim($this->input->post('house_num')) ? trim($this->input->post('house_num')) : null,                                  //第几套房子
-            'tax' => trim($this->input->post('tax')) ? trim($this->input->post('tax')) : null,                                  //契税点数
-            'is_local' => trim($this->input->post('is_local')) ? trim($this->input->post('is_local')) : null,
+            'need_mortgage' => in_array(trim($this->input->post('need_mortgage')), array(1,-1)) ? trim($this->input->post('need_mortgage')) : -1,                              //是否需要贷款，【重要】,
+            'hav_attic' => in_array(trim($this->input->post('hav_attic')), array(1,-1)) ? trim($this->input->post('hav_attic')) : -1,
+            'hav_garage' => in_array(trim($this->input->post('hav_garage')), array(1,-1)) ? trim($this->input->post('hav_garage')) : -1,
+            'hav_storage' => in_array(trim($this->input->post('hav_storage')), array(1,-1)) ? trim($this->input->post('hav_storage')) : -1,
             'remark' => trim($this->input->post('remark')) ? trim($this->input->post('remark')) : null,
+            'attic_area' => trim($this->input->post('attic_area')) ? trim($this->input->post('attic_area')) : 0,
+            'garage_area' => trim($this->input->post('garage_area')) ? trim($this->input->post('garage_area')) : 0,
+            'storage_area' => trim($this->input->post('storage_area')) ? trim($this->input->post('storage_area')) : 0,
             'user_type' => trim($this->input->post('user_type')) ? trim($this->input->post('user_type')) : null,
+            'pledge_ins' => trim($this->input->post('pledge_ins')) ? trim($this->input->post('pledge_ins')) : null,
+            'pledge_price' => trim($this->input->post('pledge_price')) ? trim($this->input->post('pledge_price')) : null,
             'flag' => 1,
             'status_wq' => 0,
             'status_yh' => 0,
@@ -166,6 +171,28 @@ class Warrants_model extends MY_Model
                 break;
             default:
                 return $this->fun_fail('是否需要按揭标记 必须传递!');
+        }
+        if($data['hav_attic'] == 1){
+            if(!$data['attic_area'] || $data['attic_area'] < 0)
+                return $this->fun_fail('请填写阁楼面积!');
+        }else{
+            $data['attic_area'] = 0;
+        }
+        if($data['hav_garage'] == 1){
+            if(!$data['garage_area'] || $data['garage_area'] < 0)
+                return $this->fun_fail('请填写车库面积!');
+        }else{
+            $data['attic_area'] = 0;
+        }
+        if($data['hav_storage'] == 1){
+            if(!$data['storage_area'] || $data['storage_area'] < 0)
+                return $this->fun_fail('请填写储藏室面积!');
+        }else{
+            $data['attic_area'] = 0;
+        }
+        if($data['is_mortgage'] != 1){
+            $data['pledge_ins'] = null;
+            $data['pledge_price'] = 0;
         }
         //如果确认提交 则需要进行所有的验证
         if($is_submit == 1){
@@ -220,8 +247,6 @@ class Warrants_model extends MY_Model
                 default:
                     return $this->fun_fail('是否需要按揭标记 必须传递!');
             }
-            if (!$data['qualification'])
-                return $this->fun_fail('购房资格必须选择!');
             $check_b_s_ = $this->check_b_s($buyers, $sellers);
             if($check_b_s_['status'] == -1)
                 return $this->fun_fail($check_b_s_['msg']);
