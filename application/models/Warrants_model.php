@@ -105,10 +105,7 @@ class Warrants_model extends MY_Model
             $sellers = json_decode($sellers,true);
         }
 
-        $qualification_arr_ = $this->input->post('qualification');
-        $qualification_ = '';
-        if($qualification_arr_ && is_array($qualification_arr_))
-            $qualification_ =  implode(',', $qualification_arr_);
+
         $data = array(
             'create_time' => time(),
             'modify_time' => time(),
@@ -310,8 +307,28 @@ class Warrants_model extends MY_Model
                     'buyer_phone' =>  isset($v['buyer_phone']) ? $v['buyer_phone'] : '',
                     'buyer_card' =>  isset($v['buyer_card']) ? $v['buyer_card'] : '',
                     'buyer_marriage' =>  isset($v['buyer_marriage']) ? $v['buyer_marriage'] : '',
-                    'warrants_id' => $warrants_id
+                    'warrants_id' => $warrants_id,
+                    'income' =>  isset($v['income']) ? $v['income'] : '',
+                    'wage' =>  isset($v['wage']) ? $v['wage'] : '',
+                    'hav_debt' =>  isset($v['hav_debt']) ? $v['hav_debt'] : '',
+                    'hav_mortgage' =>  isset($v['hav_mortgage']) ? $v['hav_mortgage'] : '',
+                    'debt_price' =>  isset($v['debt_price']) ? $v['debt_price'] : '',
+                    'mortgage_bank' =>  isset($v['mortgage_bank']) ? $v['mortgage_bank'] : '',
+                    'hav_overdue' =>  isset($v['hav_overdue']) ? $v['hav_overdue'] : '',
+                    'overdue_times' =>  isset($v['overdue_times']) ? $v['overdue_times'] : '',
+                    'hav_query' =>  isset($v['hav_query']) ? $v['hav_query'] : '',
+                    'query_times' =>  isset($v['query_times']) ? $v['query_times'] : '',
+                    'house_num' =>  isset($v['house_num']) ? $v['house_num'] : '',
+                    'hav_sfls' =>  isset($v['hav_sfls']) ? $v['hav_sfls'] : '',
+                    'hav_sfpt' =>  isset($v['hav_sfpt']) ? $v['hav_sfpt'] : '',
+                    'hav_wqzg' =>  isset($v['hav_wqzg']) ? $v['hav_wqzg'] : '',
+                    'hav_sm' =>  isset($v['hav_sm']) ? $v['hav_sm'] : '',
                 );
+                $qualification_arr_ = isset($v['qualification']) ? $v['qualification'] : '';
+                $qualification_ = '';
+                if($qualification_arr_ && is_array($qualification_arr_))
+                    $qualification_ =  implode(',', $qualification_arr_);
+                $b_insert_['qualification'] = $qualification_;
                 $buyers_insert_[] = $b_insert_;
             }
             $this->db->insert_batch('warrants_buyers', $buyers_insert_);
@@ -320,11 +337,15 @@ class Warrants_model extends MY_Model
             $sellers_insert_ = array();
             foreach ($sellers as $k => $v) {
                 $s_insert_ = array(
-                    'seller_name' => $v['seller_name'],
-                    'seller_phone' => $v['seller_phone'],
-                    'seller_card' => $v['seller_card'],
-                    'seller_marriage' => $v['seller_marriage'],
-                    'warrants_id' => $warrants_id
+                    'seller_name' => isset($v['seller_name']) ? $v['seller_name'] : '',
+                    'seller_phone' => isset($v['seller_phone']) ? $v['seller_phone'] : '',
+                    'seller_card' => isset($v['seller_card']) ? $v['seller_card'] : '',
+                    'seller_marriage' => isset($v['seller_marriage']) ? $v['seller_marriage'] : '',
+                    'warrants_id' => $warrants_id,
+                    'hav_property' => isset($v['hav_property']) ? $v['hav_property'] : '',
+                    'hav_land' => isset($v['hav_land']) ? $v['hav_land'] : '',
+                    'is_only' => isset($v['is_only']) ? $v['is_only'] : '',
+                    'house_num' => isset($v['house_num']) ? $v['house_num'] : ''
                 );
                 $sellers_insert_[] = $s_insert_;
             }
@@ -490,6 +511,14 @@ class Warrants_model extends MY_Model
         $this->db->from('warrants_buyers');
         $this->db->where('warrants_id', $warrants_id);
         $warrants_info['buyers_list'] = $this->db->get()->result_array();
+        if($warrants_info['buyers_list']){
+            foreach($warrants_info['buyers_list'] as $k => $v){
+                $warrants_info['buyers_list'][$k]['qualification_arr'] = array();
+                if($warrants_info['buyers_list'][$k]['qualification']){
+                    $warrants_info['buyers_list'][$k]['qualification_arr'] = explode(',', $warrants_info['buyers_list'][$k]['qualification']);
+                }
+            }
+        }
         $this->db->select('*');
         $this->db->from('warrants_sellers');
         $this->db->where('warrants_id', $warrants_id);
