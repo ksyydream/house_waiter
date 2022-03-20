@@ -146,4 +146,50 @@ class Sms_model extends MY_Model
         }
         return $this->fun_fail('发送失败');
     }
+
+    public function send_code_admin($mobile, $smsSign, $code, $type){
+        $ali_templateCode = $this->config->item('ali_templateCode');
+        if(!isset($ali_templateCode[$type])){
+            return $this->fun_fail('请求类型不存在');
+        }
+        //当$type=2时,也就是登录时判断下,账号是否存在
+        if($type == 2){
+            $check_info_ = $this->db->select()->from('admin')->where('user', $mobile)->get()->row_array();
+            if(!$check_info_)
+                return $this->fun_fail('账号不存在,请先注册!');
+        }
+        if($type == 1){
+            $check_info_ = $this->db->select()->from('admin')->where('user', $mobile)->get()->row_array();
+            if($check_info_)
+                return $this->fun_fail('账号已注册!');
+        }
+        $sms_log = $this->db->select('*')->from('sms_log')->where(array('mobile' => $mobile, 'status' => 1))->limit(1)->order_by('add_time','desc')->get()->row_array();
+        if($sms_log){
+            $sms_time_out = $this->config->item('sms_time_out');
+            $sms_time_out = $sms_time_out ? $sms_time_out : 120;
+            if ((time() - $sms_log['add_time']) < $sms_time_out) {
+                return $this->fun_fail($sms_time_out . '秒内不允许重复发送');
+            }
+        }
+        $res = $this->sendSms($mobile, $smsSign, $code, $ali_templateCode[$type]);
+        $insert_ = array(
+            'mobile' => $mobile,
+            'code' => $code,
+            'template' => $ali_templateCode[$type],
+            'scene' => $type,
+            'add_time' => time()
+        );
+        if ($res && $res->Code == 'OK') {
+            $insert_['status'] = 1;
+            $this->db->insert('sms_log', $insert_);
+            return $this->fun_success('发送成功');
+        }else{
+            if($res){
+                $insert_['status'] = 0;
+                $insert_['error_msg'] = $res->Message . ' subcode:' . $res->Code;
+                $this->db->insert('sms_log', $insert_);
+            }
+        }
+        return $this->fun_fail('发送失败');
+    }
 }

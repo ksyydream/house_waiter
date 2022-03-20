@@ -28,6 +28,7 @@ class Mini_login_model extends MY_Model
              $this->db->where(array('mini_openid' => $openid))->update('admin', array('mini_openid' => '', 'token' => ''));
              $this->db->where(array('mini_openid' => $openid))->update('users', array('mini_openid' => '', 'token' => ''));
             $this->db->where(array('mini_openid' => $openid))->update('brand', array('mini_openid' => '', 'token' => ''));
+            $this->db->where(array('mini_openid' => $openid))->update('brand_stores', array('mini_openid' => '', 'token' => ''));
 
         }
         //再处理下token 
@@ -35,18 +36,32 @@ class Mini_login_model extends MY_Model
              $this->db->where(array('token' => $token))->update('admin', array('mini_openid' => '', 'token' => ''));
              $this->db->where(array('token' => $token))->update('users', array('mini_openid' => '', 'token' => ''));
             $this->db->where(array('token' => $token))->update('brand', array('mini_openid' => '', 'token' => ''));
+            $this->db->where(array('token' => $token))->update('brand_stores', array('mini_openid' => '', 'token' => ''));
 		}
         return $this->fun_success('操作成功');
     }
 
-    //管理员登录
+    //管理员 短信登录
     public function admin_login(){
 
         $data = array(
-            'user' => trim($this->input->post('user')),
-            'password' => password(trim($this->input->post('password'))),
+            'mobile' => trim($this->input->post('user')),
+            'sms_code' => trim($this->input->post('sms_code')),
         );
-        $row = $this->db->select()->from('admin')->where($data)->get()->row_array();
+        if(!$data['mobile']){
+            return $this->fun_fail('手机号不能为空!');
+        }
+        if(!check_mobile($data['mobile'])){
+            return $this->fun_fail('手机号不规范!');
+        }
+        if(!$data['sms_code']){
+            return $this->fun_fail('短信验证码不能为空!');
+        }
+        $check_sms = $this->check_sms($data['mobile'], $data['sms_code'], 2);
+        if($check_sms['status'] != 1){
+            return $check_sms;
+        }
+        $row = $this->db->select()->from('admin')->where('user', $data['mobile'])->where(array('status' => 1, 'role_id >=' => 1))->get()->row_array();
         if ($row) {
             if($row['status'] != 1)
                 return $this->fun_fail('账号禁用');
@@ -59,7 +74,31 @@ class Mini_login_model extends MY_Model
             }
             return $this->fun_success('操作成功',$row);
         } else {
-            return $this->fun_fail('账号未注册或密码错误');
+            return $this->fun_fail('账号不存在或无移动端权限');
+        }
+    }
+
+    //管理员 密码登录
+    public function admin_login_password(){
+
+        $data = array(
+            'user' => trim($this->input->post('user')),
+            'password' => password(trim($this->input->post('password'))),
+        );
+        $row = $this->db->select()->from('admin')->where($data)->where(array('status' => 1, 'role_id >=' => 1))->get()->row_array();
+        if ($row) {
+            if($row['status'] != 1)
+                return $this->fun_fail('账号禁用');
+            $code = $this->input->post('code');
+            $re_openid = $this->get_mini_openid4log($code);
+            if($re_openid['status'] == 1){
+                $openid = $re_openid['result']['openid'];
+                $this->delOpenidById($row['admin_id'], $openid, 'admin');
+                $this->db->where(array('admin_id' => $row['admin_id']))->update('admin', array('mini_openid' => $openid));
+            }
+            return $this->fun_success('操作成功',$row);
+        } else {
+            return $this->fun_fail('账号不存在或无移动端权限');
         }
     }
 

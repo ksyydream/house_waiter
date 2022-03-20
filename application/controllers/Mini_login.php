@@ -39,6 +39,24 @@ class Mini_login extends Mini_controller {
     }
 
     //公司人员登录
+    public function admin_login_password(){
+        $rs = $this->mini_login_model->admin_login_password();
+        if($rs['status'] == 1){
+            $admin_id = $rs['result']['admin_id'];
+            $role_id = $rs['result']['role_id'];
+            $admin_info_ = $this->mini_admin_model->get_admin_info($admin_id);
+            $role_name = '';
+            if ($admin_info_ && $admin_info_['status'] == 1 && $admin_info_['result']){
+                $role_name = $admin_info_['result']['role_name'];
+            }
+            $token = $this->set_token_uid($admin_id,'ADMIN');
+            $this->mini_admin_model->update_admin_tt($admin_id,$token);
+            $rs['result'] = array('token' => $token, 'role_id' => $role_id, 'role_name' => $role_name);
+        }
+        $this->ajaxReturn($rs);
+    }
+
+    //公司人员登录
     public function brand_login(){
         $rs = $this->mini_login_model->brand_login();
         if($rs['status'] == 1){
@@ -64,6 +82,23 @@ class Mini_login extends Mini_controller {
         //随机一个验证码
         $code = rand(10000, 99999);
         $res = $this->sms_model->send_code($mobile, '房猫服务中心', $code, $type);
+        $this->ajaxReturn($res);
+    }
+
+    //管理员 手机短信请求 type 是1的时候代表注册，2的时候代表登录
+    public function get_sms_admin(){
+        $type = $this->input->post('type');
+        $mobile = $this->input->post('mobile');
+        if(!$mobile){
+            $this->ajaxReturn($this->mini_login_model->fun_fail("电话号码不能为空"));
+        }
+        if(!check_mobile($mobile)){
+            $this->ajaxReturn($this->mini_login_model->fun_fail("手机号不规范"));
+        }
+        $this->load->model('sms_model');
+        //随机一个验证码
+        $code = rand(10000, 99999);
+        $res = $this->sms_model->send_code_admin($mobile, '房猫服务中心', $code, $type);
         $this->ajaxReturn($res);
     }
 
